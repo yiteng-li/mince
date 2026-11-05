@@ -1,0 +1,77 @@
+feature,area,priority,original,clone,notes
+Sign up / log in with email + password,auth,must,yes,yes,Supabase Auth already wired
+Sign in with Apple,auth,should,yes,partial,client done; needs Apple provider enabled in Supabase Auth
+Password reset,auth,must,yes,yes,
+Onboarding wizard (sex DOB height weight activity goal),onboarding,must,yes,yes,
+Energy target from BMR + activity + weight goal rate,targets,must,yes,yes,Mifflin-St Jeor; CalorieCalculator stub
+Weight-loss rate safety guardrails,targets,should,yes,yes,
+Macro targets: % ratio / grams / keto mode,targets,must,yes,yes,
+Default micronutrient targets from DRI by age/sex,targets,must,yes,yes,
+Custom min/max per nutrient,targets,must,yes,yes,
+Diet presets (keto vegan vegetarian pescatarian etc),targets,should,yes,yes,
+Diary day view with date navigation + calendar,diary,must,yes,yes,
+Diary groups (renamable Breakfast/Lunch/Dinner/Snacks),diary,must,yes,yes,replaces fixed meal_type check
+Food search across database + custom + recipes,logging,must,yes,yes,
+Serving unit picker (g ml cup piece) + quantity,logging,must,yes,yes,needs food_servings table
+Recent / frequent foods,logging,must,yes,yes,
+Barcode scanner,logging,must,yes,yes,AVFoundation + OFF already started
+Manual barcode entry + create food when not found,logging,should,yes,yes,
+Quick add calories/macros,logging,should,yes,yes,
+Edit / delete entry with undo,diary,must,yes,yes,
+Copy / paste entries and copy previous day,diary,should,yes,yes,
+Multi-select entries,diary,should,yes,yes,
+Energy summary (consumed burned remaining BMR activity exercise),diary,must,yes,yes,
+Nutrient targets tables (84+ nutrients by category),diary,must,yes,yes,
+Mark day complete + streak,diary,should,yes,yes,
+Notes on a day,diary,should,yes,yes,
+Water tracking + water in foods,diary,should,yes,yes,
+Custom foods with full nutrition label,foods,must,yes,yes,
+Volumetric serving sizes on custom foods,foods,should,yes,partial,volume entered as its gram weight; no density conversion
+Custom recipes (ingredients servings final weight),foods,must,yes,yes,
+Custom meals (bundle) + explode on log,foods,must,yes,partial,meals always explode; non-exploded = make a recipe
+Save diary group as meal,foods,could,yes,yes,
+Exercise log with built-in exercise catalogue,exercise,must,yes,yes,MET table
+Biometrics: weight,biometrics,must,yes,yes,weight_logs exists
+Biometrics: built-in catalogue (measurements BP glucose mood sleep stool labs),biometrics,should,yes,yes,
+Progress photos (snapshots),biometrics,could,yes,yes,Supabase Storage
+Basic charts: weight + energy over time,reports,must,yes,yes,Swift Charts
+Nutrition report 7-day averages vs targets,reports,must,yes,yes,
+Top food sources per nutrient,reports,should,yes,yes,
+Apple Health import (workouts active energy weight sleep),integrations,should,yes,yes,HealthKit
+Apple Health export (nutrition),integrations,should,yes,yes,
+Units: metric / imperial / stones,settings,must,yes,yes,
+Delete account + all data,settings,must,yes,yes,delete-account Edge Function
+Bulk delete diary by date range,settings,could,yes,yes,
+Home screen widgets (energy streak water),platform,could,yes,no,needs a WidgetKit extension target (add in Xcode)
+Apple Watch app,platform,could,yes,no,needs a watchOS target
+Gold subscription monthly/annual with restore,gold,must,yes,yes,StoreKit 2 + server verification via App Store Server API; needs App Store Connect products
+Gold: unlimited history in reports (any date range),gold,must,yes,yes,
+Gold: Photo Log (AI meal recognition),gold,must,yes,yes,photo-log Edge Function (Claude vision)
+Gold: Voice Log + Siri,gold,should,yes,yes,voice-parse Edge Function + App Intent
+Gold: Recipe Importer (URL or pasted text),gold,must,yes,yes,"recipe-import: JSON-LD first, then page text"
+Gold: Repeat Items (daily weekly specific days),gold,must,yes,yes,
+Gold: Macro Scheduler (per weekday templates),gold,must,yes,yes,
+Gold: Fasting Timer (start stop edit schedule recurring),gold,must,yes,yes,
+Gold: Timestamps on entries + sort by time,gold,must,yes,yes,
+Gold: Custom Biometrics,gold,should,yes,yes,
+Gold: Custom Charts (any nutrient/biometric dual axis pin),gold,should,yes,yes,
+Gold: Nutrition Scores (up to 8),gold,should,yes,yes,own formulas; not theirs
+Gold: Oracle nutrient search (top foods for a nutrient),gold,should,yes,yes,
+Gold: Food Suggestions to hit remaining targets,gold,should,yes,yes,
+Gold: Share custom foods and recipes,gold,could,yes,yes,share token
+Gold: Print / PDF report,gold,should,yes,yes,ImageRenderer/PDFKit
+Gold: CSV data export,gold,should,yes,yes,
+Gold: Crono Coach style AI guidance,gold,could,yes,yes,coach Edge Function
+Gold: diary group subtotals,gold,could,yes,yes,
+Gold: CGM charts (glucose time series),gold,could,yes,partial,glucose imported from Apple Health and charted in Biometric charts; no CGM-specific overlay
+Customisable plus menu,platform,could,yes,yes,
+Adjustable font size,platform,could,yes,yes,Dynamic Type covers it
+Localisation (FR DE PT-BR),platform,could,yes,no,English only; strings ready for a String Catalog
+Cronometer licensed food database (NCCDB + lab data),data,skip,yes,skip,licensed; use USDA FDC + Open Food Facts
+Cronometer nutrition score formulas and branding,data,skip,yes,skip,their IP; write our own
+Ads in Basic tier,monetisation,skip,yes,skip,no reason to show ads
+Partner perks (WHOOP Oura discounts),gold,skip,yes,skip,partner deals
+Instacart ingredient ordering,integrations,skip,yes,skip,partner deal
+Garmin WHOOP Oura Dexcom Polar Withings Suunto direct sync,integrations,skip,yes,skip,partner programmes; Apple Health covers iOS
+Cronometer Pro / Enterprise,pro,skip,yes,skip,different product
+Newsfeed / Discover editorial content,content,skip,yes,skip,their content

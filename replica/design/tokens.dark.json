@@ -1,0 +1,99 @@
+{
+  "_about": "Dark-mode colour values for the same roles as tokens.json. Check: python3 contrast.py tokens.dark.json",
+  "color": {
+    "bg": "#000000",
+    "surface": "#1c1c1e",
+    "track": "#2c2c2e",
+    "border": "#38383a",
+    "border-input": "#8e8e93",
+    "text": "#f2f2f7",
+    "text-muted": "#a1a1aa",
+    "accent": "#7b93ff",
+    "on-accent": "#0b1020",
+    "danger": "#ff6b6b",
+    "success": "#4ade80",
+    "warning": "#f5c542",
+    "gold": "#f2c14e",
+    "on-gold": "#2a1f00",
+    "energy": "#7b93ff",
+    "protein": "#4ade80",
+    "carbs": "#60a5fa",
+    "fat": "#fb923c"
+  },
+  "pairs": [
+    [
+      "text",
+      "bg"
+    ],
+    [
+      "text",
+      "surface"
+    ],
+    [
+      "text-muted",
+      "bg"
+    ],
+    [
+      "text-muted",
+      "surface"
+    ],
+    [
+      "on-accent",
+      "accent"
+    ],
+    [
+      "accent",
+      "surface"
+    ],
+    [
+      "accent",
+      "bg"
+    ],
+    [
+      "danger",
+      "surface"
+    ],
+    [
+      "success",
+      "surface"
+    ],
+    [
+      "warning",
+      "surface"
+    ],
+    [
+      "on-gold",
+      "gold"
+    ],
+    [
+      "border-input",
+      "surface",
+      "ui"
+    ],
+    [
+      "energy",
+      "track",
+      "ui"
+    ],
+    [
+      "protein",
+      "surface",
+      "ui"
+    ],
+    [
+      "carbs",
+      "surface",
+      "ui"
+    ],
+    [
+      "fat",
+      "surface",
+      "ui"
+    ],
+    [
+      "accent",
+      "surface",
+      "ui"
+    ]
+  ]
+}
