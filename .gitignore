@@ -14,6 +14,10 @@ DerivedData/
 
 # Secrets — never commit real keys
 Secrets.xcconfig
+mince/Info.plist
 
 # macOS
 .DS_Store
+
+# Edge Function secrets
+supabase/functions/.env
