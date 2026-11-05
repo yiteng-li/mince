@@ -1,0 +1,1 @@
+{ "private": true, "type": "module", "dependencies": { "@electric-sql/pglite": "^0.5.15" }, "scripts": { "test": "node run.mjs stub.sql ../../supabase/migrations/20261105000000_schema.sql ../../supabase/migrations/20261105000002_reference_data.sql test.sql" } }
