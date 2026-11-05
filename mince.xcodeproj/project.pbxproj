@@ -1,0 +1,532 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		09A4222D3045965B00FA12D8 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 09A4222C3045965B00FA12D8 /* Secrets.xcconfig */; };
+		09F183F13045893E0085551A /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 09F183F03045893E0085551A /* Supabase */; };
+		70C65FD3964397DAEAD8126C /* minceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2ADDAA058C72F19BFE7441D7 /* minceUITests.swift */; };
+		B002195669F4B3B15B0A4B49 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3E8F0088DB14D8557A16A0DC /* Foundation.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		786B8B29EFF63509F34F87CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 09BB511C304582AC00C4E738 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 09BB5123304582AC00C4E738;
+			remoteInfo = mince;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		09A4222C3045965B00FA12D8 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		09BB5124304582AC00C4E738 /* mince.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mince.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2ADDAA058C72F19BFE7441D7 /* minceUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = minceUITests.swift; path = minceUITests/minceUITests.swift; sourceTree = "<group>"; };
+		3E8F0088DB14D8557A16A0DC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		FD5853BE1FC0364221C039B0 /* minceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = minceUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		09A4222F3045969900FA12D8 /* Exceptions for "mince" folder in "mince" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 09BB5123304582AC00C4E738 /* mince */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		09BB5126304582AC00C4E738 /* mince */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09A4222F3045969900FA12D8 /* Exceptions for "mince" folder in "mince" target */,
+			);
+			path = mince;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		09BB5121304582AC00C4E738 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				09F183F13045893E0085551A /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E79E0388E7B3E53E1FFC0F11 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B002195669F4B3B15B0A4B49 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		09BB511B304582AC00C4E738 = {
+			isa = PBXGroup;
+			children = (
+				09BB5126304582AC00C4E738 /* mince */,
+				09BB5125304582AC00C4E738 /* Products */,
+				09A4222C3045965B00FA12D8 /* Secrets.xcconfig */,
+				DCD45F44DC1EA3CAB9B63B7E /* Frameworks */,
+				3E38456B1EC385E38182E07C /* minceUITests */,
+			);
+			sourceTree = "<group>";
+		};
+		09BB5125304582AC00C4E738 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				09BB5124304582AC00C4E738 /* mince.app */,
+				FD5853BE1FC0364221C039B0 /* minceUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3E38456B1EC385E38182E07C /* minceUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2ADDAA058C72F19BFE7441D7 /* minceUITests.swift */,
+			);
+			name = minceUITests;
+			sourceTree = SOURCE_ROOT;
+		};
+		C8014046A2E8B3BE2FDD96FD /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				3E8F0088DB14D8557A16A0DC /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		DCD45F44DC1EA3CAB9B63B7E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C8014046A2E8B3BE2FDD96FD /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		09BB5123304582AC00C4E738 /* mince */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 09BB512F304582AD00C4E738 /* Build configuration list for PBXNativeTarget "mince" */;
+			buildPhases = (
+				09BB5120304582AC00C4E738 /* Sources */,
+				09BB5121304582AC00C4E738 /* Frameworks */,
+				09BB5122304582AC00C4E738 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				09BB5126304582AC00C4E738 /* mince */,
+			);
+			name = mince;
+			packageProductDependencies = (
+				09F183F03045893E0085551A /* Supabase */,
+			);
+			productName = mince;
+			productReference = 09BB5124304582AC00C4E738 /* mince.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DF4B82370EA52F410FA2BBBE /* minceUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD946B52D2334FB91D47F050 /* Build configuration list for PBXNativeTarget "minceUITests" */;
+			buildPhases = (
+				54CA09980ECF39DE0338099A /* Sources */,
+				E79E0388E7B3E53E1FFC0F11 /* Frameworks */,
+				CC8CB2A47113579F52EC00D0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BE35B06E4FAC861341BC812F /* PBXTargetDependency */,
+			);
+			name = minceUITests;
+			productName = minceUITests;
+			productReference = FD5853BE1FC0364221C039B0 /* minceUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		09BB511C304582AC00C4E738 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					09BB5123304582AC00C4E738 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					DF4B82370EA52F410FA2BBBE = {
+						TestTargetID = 09BB5123304582AC00C4E738;
+					};
+				};
+			};
+			buildConfigurationList = 09BB511F304582AC00C4E738 /* Build configuration list for PBXProject "mince" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 09BB511B304582AC00C4E738;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				09F183EF3045893E0085551A /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 09BB5125304582AC00C4E738 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				09BB5123304582AC00C4E738 /* mince */,
+				DF4B82370EA52F410FA2BBBE /* minceUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		09BB5122304582AC00C4E738 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				09A4222D3045965B00FA12D8 /* Secrets.xcconfig in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC8CB2A47113579F52EC00D0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		09BB5120304582AC00C4E738 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54CA09980ECF39DE0338099A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				70C65FD3964397DAEAD8126C /* minceUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BE35B06E4FAC861341BC812F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = mince;
+			target = 09BB5123304582AC00C4E738 /* mince */;
+			targetProxy = 786B8B29EFF63509F34F87CF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		09BB512D304582AD00C4E738 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 09A4222C3045965B00FA12D8 /* Secrets.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		09BB512E304582AD00C4E738 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 09A4222C3045965B00FA12D8 /* Secrets.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		09BB5130304582AD00C4E738 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mince/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = mince/mince.entitlements;
+				INFOPLIST_KEY_NSCameraUsageDescription = "mince uses your camera to scan barcodes and photograph meals.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "mince reads workouts, weight, sleep and vitals from Apple Health to add them to your diary.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "mince writes the nutrition you log to Apple Health.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "mince listens when you log food by voice.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "mince turns what you say into food entries.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = yell0.mince;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		09BB5131304582AD00C4E738 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mince/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = mince/mince.entitlements;
+				INFOPLIST_KEY_NSCameraUsageDescription = "mince uses your camera to scan barcodes and photograph meals.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "mince reads workouts, weight, sleep and vitals from Apple Health to add them to your diary.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "mince writes the nutrition you log to Apple Health.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "mince listens when you log food by voice.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "mince turns what you say into food entries.";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = yell0.mince;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		70699C780FFB31CF085420A7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				PRODUCT_BUNDLE_IDENTIFIER = yell0.mince.UITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = mince;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B1E354EEFFDD13004207736F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MX582WPZ3B;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				PRODUCT_BUNDLE_IDENTIFIER = yell0.mince.UITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = mince;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		09BB511F304582AC00C4E738 /* Build configuration list for PBXProject "mince" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				09BB512D304582AD00C4E738 /* Debug */,
+				09BB512E304582AD00C4E738 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		09BB512F304582AD00C4E738 /* Build configuration list for PBXNativeTarget "mince" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				09BB5130304582AD00C4E738 /* Debug */,
+				09BB5131304582AD00C4E738 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BD946B52D2334FB91D47F050 /* Build configuration list for PBXNativeTarget "minceUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				70699C780FFB31CF085420A7 /* Release */,
+				B1E354EEFFDD13004207736F /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		09F183EF3045893E0085551A /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		09F183F03045893E0085551A /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 09F183EF3045893E0085551A /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 09BB511C304582AC00C4E738 /* Project object */;
+}
