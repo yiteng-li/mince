@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 
 /// foods, food_servings, recipes, meals, sharing and the food RPCs.
+/// In demo mode (`-demo`) every method uses the in-memory data in Demo.swift instead.
 struct FoodService {
     private var db: SupabaseClient { SupabaseService.shared }
     static let withServings = "*, food_servings(*)"
@@ -96,9 +97,9 @@ struct FoodService {
         r.source = r.source == .shared ? .shared : .recipe
         try await db.from("foods").upsert(r).execute()
         try await db.from("recipe_ingredients").delete().eq("recipe_id", value: r.id.uuidString).execute()
-        let rows = ingredients.enumerated().map { i, l in
-            FoodLineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
-                    position: i, recipe_id: r.id, meal_id: nil)
+        let rows = ingredients.enumerated().map { index, line in
+            FoodLineRow(id: UUID(), foodId: line.foodId, servingId: line.servingId, servingQty: line.servingQty,
+                        amountG: line.amountG, position: index, recipeId: r.id, mealId: nil)
         }
         if !rows.isEmpty { try await db.from("recipe_ingredients").insert(rows).execute() }
         try await db.rpc("recompute_recipe", params: ["p_recipe": r.id.uuidString]).execute()
@@ -121,9 +122,9 @@ struct FoodService {
         }
         try await db.from("meals").upsert(meal).execute()
         try await db.from("meal_items").delete().eq("meal_id", value: meal.id.uuidString).execute()
-        let rows = items.enumerated().map { i, l in
-            FoodLineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
-                    position: i, recipe_id: nil, meal_id: meal.id)
+        let rows = items.enumerated().map { index, line in
+            FoodLineRow(id: UUID(), foodId: line.foodId, servingId: line.servingId, servingQty: line.servingQty,
+                        amountG: line.amountG, position: index, recipeId: nil, mealId: meal.id)
         }
         if !rows.isEmpty { try await db.from("meal_items").insert(rows).execute() }
     }
@@ -133,7 +134,7 @@ struct FoodService {
         try await db.from("meals").delete().eq("id", value: meal.id.uuidString).execute()
     }
 
-    // MARK: sharing (Gold)
+    // MARK: sharing (mince+)
 
     /// Turns sharing on and returns the link.
     func share(_ food: Food) async throws -> URL {
@@ -164,13 +165,13 @@ struct FoodService {
         return try await save(copy, servings: servings)
     }
 
-    // MARK: Oracle (Gold)
+    // MARK: Oracle (mince+)
 
     func oracle(nutrient key: String, perKcal: Bool) async throws -> [Food] {
         if Demo.active {
-            return Demo.foods.filter { ($0.nutrients[key] ?? 0) > 0 }.sorted {
-                ($0.nutrients[key]! / (perKcal ? max($0.nutrients[.energy], 1) : 1)) > ($1.nutrients[key]! / (perKcal ? max($1.nutrients[.energy], 1) : 1))
-            }
+            // Same ranking as the oracle RPC: amount per 100 kcal, or per 100 g.
+            let richness = { (f: Food) in (f.nutrients[key] ?? 0) / (perKcal ? max(f.nutrients[.energy], 1) : 1) }
+            return Demo.foods.filter { (f: Food) in (f.nutrients[key] ?? 0) > 0 }.sorted { richness($0) > richness($1) }
         }
         struct P: Encodable { let p_key: String; let per: String; let lim: Int }
         do {

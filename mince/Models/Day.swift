@@ -28,6 +28,9 @@ struct Day: Hashable, Comparable, Codable, Identifiable, CustomStringConvertible
 
     static var today: Day { Day() }
 
+    /// The latest birth date allowed: mince is for people 13 and older.
+    static var latestBirthDate: Date { Calendar.current.date(byAdding: .year, value: -13, to: Date()) ?? Date() }
+
     /// Noon on this day, local time (safe from DST edges).
     var date: Date {
         Self.formatter.timeZone = .current

@@ -16,7 +16,7 @@ await db.exec(mig('20261105000002_reference_data.sql'));
 await db.exec(`grant usage on schema public to authenticated; grant all on all tables in schema public to authenticated;
   grant execute on all functions in schema public to authenticated;
   insert into auth.users values ('${UID}');
-  insert into public.subscriptions values ('t-1', '${UID}', 'mince.gold.annual', 'active', now() + interval '1 year', 'Sandbox');`);
+  insert into public.subscriptions values ('t-1', '${UID}', 'mince.plus.annual', 'active', now() + interval '1 year', 'Sandbox');`);
 
 let failures = 0;
 const fail = (m) => { failures++; console.log('FAIL   ', m); };
@@ -26,6 +26,17 @@ const asUser = async (fn) => {
 };
 const columns = async (t) => new Set((await db.query(
   `select column_name from information_schema.columns where table_schema='public' and table_name=$1`, [t])).rows.map((r) => r.column_name));
+
+// PostgREST takes a bulk insert's column list from the first row, so rows the app inserts in bulk must all
+// carry the same keys, with nil values sent as null rather than left out.
+for (const t of ['diary_entries', 'recipe_ingredients', 'meal_items', 'food_servings']) {
+  const rows = payloads[t] ?? [];
+  const shapes = new Set(rows.map((r) => Object.keys(r).sort().join(',')));
+  if (shapes.size > 1) fail(`${t}: rows have different keys, a bulk insert would drop columns: ${[...shapes].join(' | ')}`);
+}
+for (const t of ['recipe_ingredients', 'meal_items']) {
+  for (const r of payloads[t] ?? []) if (!('serving_id' in r && 'serving_qty' in r)) fail(`${t}: serving_id/serving_qty must be sent even when null`);
+}
 
 const order = ['profiles', 'diary_groups', 'foods', 'food_servings', 'recipe_ingredients', 'meals', 'meal_items', 'biometric_types',
   'diary_entries', 'days', 'repeat_rules', 'fasts', 'fast_schedules', 'custom_charts', 'snapshots', 'macro_templates', 'macro_schedule', 'nutrient_targets'];
@@ -53,7 +64,7 @@ try {
   console.log('ok      update diary_entries');
 } catch (e) { fail(`diary_entries update: ${e.message}`); }
 
-// Sharing needs a token (Gold).
+// Sharing needs a token (mince+).
 await asUser(() => db.query(`update public.foods set share_token = 'aaaaaaaa-0000-0000-0000-000000000001' where id = 'f0000000-0000-0000-0000-000000000001'`));
 
 // Read shapes, mirroring the selects in mince/Services.
@@ -95,7 +106,7 @@ const reads = {
   rpc_nutrient_totals: `select jsonb_agg(to_jsonb(t)) from public.nutrient_totals('2026-11-05', '2026-11-05') t`,
   rpc_nutrient_sources: `select jsonb_agg(to_jsonb(t)) from public.nutrient_sources('2026-11-05', '2026-11-05', 'magnesium', 15) t`,
   rpc_get_shared_food: `select jsonb_agg(to_jsonb(t)) from public.get_shared_food('aaaaaaaa-0000-0000-0000-000000000001') t`,
-  rpc_is_gold: `select to_jsonb(public.is_gold())`,
+  rpc_has_plus: `select to_jsonb(public.has_plus())`,
   rpc_materialize_repeats: `select to_jsonb(public.materialize_repeats('2026-11-06'))`,
 };
 const out = {};
@@ -108,7 +119,7 @@ for (const [name, sql] of Object.entries(reads)) {
 }
 // Spot checks on values that matter.
 if (out.rpc_nutrient_totals?.find((r) => r.nutrient_key === 'energy')?.amount !== 380 * 1.2 + 250) fail(`totals energy: ${JSON.stringify(out.rpc_nutrient_totals)}`);
-if (out.rpc_is_gold !== true) fail('is_gold should be true');
+if (out.rpc_has_plus !== true) fail('has_plus should be true');
 fs.writeFileSync(outFile, JSON.stringify(out));
 console.log(failures ? `write/read: ${failures} failed` : 'write/read: all passed');
 process.exit(failures ? 1 : 0);

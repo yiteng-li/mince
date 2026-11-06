@@ -24,7 +24,7 @@ struct OnboardingView: View {
                             Text("Male").tag(Sex?.some(.male))
                             Text("Female").tag(Sex?.some(.female))
                         }
-                        DatePicker("Date of birth", selection: $dob, in: ...Calendar.current.date(byAdding: .year, value: -13, to: Date())!, displayedComponents: .date)
+                        DatePicker("Date of birth", selection: $dob, in: ...Day.latestBirthDate, displayedComponents: .date)
                     } footer: { Text("Used for your energy needs and vitamin and mineral targets.") }
                     Section("Units") {
                         Picker("Units", selection: $draft.unitSystem) { ForEach(UnitSystem.allCases) { Text($0.title).tag($0) } }

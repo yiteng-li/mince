@@ -59,6 +59,8 @@ struct DiaryEntry: Identifiable, Codable, Hashable {
         case food, serving, exercise
     }
 
+    /// Writes every column explicitly: nil becomes null, so updates can clear a field and bulk inserts
+    /// (whose column list PostgREST takes from the first row) keep every column. Embedded joins are never sent.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id)
@@ -142,4 +144,13 @@ struct BiometricType: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey { case id, userId = "user_id", key, name, unit, category, valueKind = "value_kind" }
 
     var isCustom: Bool { userId != nil }
+}
+
+/// A progress photo. The image lives in the private `snapshots` bucket under `<user_id>/`.
+struct Snapshot: Identifiable, Codable, Hashable {
+    var id = UUID()
+    var userId: UUID
+    var day: Day
+    var storagePath: String
+    enum CodingKeys: String, CodingKey { case id, userId = "user_id", day, storagePath = "storage_path" }
 }

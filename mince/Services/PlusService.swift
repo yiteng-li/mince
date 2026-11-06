@@ -1,15 +1,15 @@
 import Foundation
 import Supabase
 
-/// Gold-only tables (repeat rules, fasts, custom charts) plus snapshots and subscription status.
-/// Writes to Gold tables fail with `.goldRequired` when the server says the user isn't Gold.
-struct GoldService {
+/// mince+ only tables (repeat rules, fasts, custom charts) plus snapshots and subscription status.
+/// Writes to mince+ tables fail with `.plusRequired` when the server says the user isn't mince+.
+struct PlusService {
     private var db: SupabaseClient { SupabaseService.shared }
 
-    /// Server-side truth for Gold (what RLS and RPCs check).
-    func isGold() async throws -> Bool {
-        if Demo.active { return Demo.gold }
-        return try await db.rpc("is_gold").execute().value
+    /// Server-side truth for mince+ (what RLS and RPCs check).
+    func hasPlus() async throws -> Bool {
+        if Demo.active { return Demo.plus }
+        return try await db.rpc("has_plus").execute().value
     }
 
     // MARK: Repeat Items
@@ -85,28 +85,5 @@ struct GoldService {
     func delete(_ chart: CustomChart) async throws {
         if Demo.active { Demo.charts.removeAll { $0.id == chart.id }; return }
         try await db.from("custom_charts").delete().eq("id", value: chart.id.uuidString).execute()
-    }
-
-    // MARK: Snapshots (progress photos)
-
-    func snapshots() async throws -> [Snapshot] {
-        if Demo.active { return [] }
-        return try await db.from("snapshots").select().order("day", ascending: false).execute().value
-    }
-
-    func addSnapshot(jpeg: Data, day: Day) async throws {
-        let uid = try SupabaseService.userId
-        let path = "\(uid.uuidString.lowercased())/\(UUID().uuidString).jpg"
-        try await db.storage.from("snapshots").upload(path, data: jpeg, options: FileOptions(contentType: "image/jpeg"))
-        try await db.from("snapshots").insert(Snapshot(userId: uid, day: day, storagePath: path)).execute()
-    }
-
-    func deleteSnapshot(_ s: Snapshot) async throws {
-        try await db.storage.from("snapshots").remove(paths: [s.storagePath])
-        try await db.from("snapshots").delete().eq("id", value: s.id.uuidString).execute()
-    }
-
-    func signedURL(bucket: String, path: String) async throws -> URL {
-        try await db.storage.from(bucket).createSignedURL(path: path, expiresIn: 3600)
     }
 }

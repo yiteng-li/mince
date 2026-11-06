@@ -1,7 +1,8 @@
 import Foundation
 import Supabase
 
-/// diary_entries, diary_groups, days, and the aggregation RPCs.
+/// diary_entries, diary_groups, days, progress photos, and the aggregation RPCs.
+/// In demo mode (`-demo`) every method uses the in-memory data in Demo.swift instead.
 struct DiaryService {
     private var db: SupabaseClient { SupabaseService.shared }
 
@@ -17,7 +18,10 @@ struct DiaryService {
     /// Entries of one kind over a range (biometric charts, exports).
     func entries(from: Day, to: Day, kind: DiaryEntry.Kind? = nil, biometricTypeId: UUID? = nil) async throws -> [DiaryEntry] {
         if Demo.active {
-            return Demo.diary.filter { $0.day >= from && $0.day <= to && (kind == nil || $0.kind == kind) && (biometricTypeId == nil || $0.biometricTypeId == biometricTypeId) }
+            return Demo.diary
+                .filter { $0.day >= from && $0.day <= to }
+                .filter { kind == nil || $0.kind == kind }
+                .filter { biometricTypeId == nil || $0.biometricTypeId == biometricTypeId }
                 .sorted { $0.day < $1.day }
         }
         var q = db.from("diary_entries").select(DiaryEntry.selectWithJoins)
@@ -63,17 +67,17 @@ struct DiaryService {
             .gte("day", value: from.rawValue).lte("day", value: to.rawValue).execute()
     }
 
-    /// Inserts today's Repeat Items (Gold; a no-op otherwise). Call before loading the day.
+    /// Inserts today's Repeat Items (mince+; a no-op otherwise). Call before loading the day.
     @discardableResult
     func materializeRepeats(on day: Day) async throws -> Int {
         if Demo.active { return 0 }
         return try await db.rpc("materialize_repeats", params: ["p_day": day.rawValue]).execute().value
     }
 
-    /// Per-day nutrient totals for a range. Ranges over 7 days need Gold.
+    /// Per-day nutrient totals for a range. Ranges over 7 days need mince+.
     func totals(from: Day, to: Day) async throws -> [Day: Nutrients] {
         if Demo.active {
-            if from.distance(to: to) >= 7 && !Demo.gold { throw AppError.goldRequired }
+            if from.distance(to: to) >= 7 && !Demo.plus { throw AppError.plusRequired }
             return Demo.totals(from: from, to: to)
         }
         do {
@@ -133,6 +137,29 @@ struct DiaryService {
     func setCompleted(_ completed: Bool, day: Day) async throws {
         if Demo.active { if completed { Demo.completed.insert(day) } else { Demo.completed.remove(day) }; return }
         try await db.from("days").upsert(DayStatus(userId: SupabaseService.userId, day: day, completed: completed)).execute()
+    }
+
+    // MARK: progress photos
+
+    func snapshots() async throws -> [Snapshot] {
+        if Demo.active { return [] }
+        return try await db.from("snapshots").select().order("day", ascending: false).execute().value
+    }
+
+    func addSnapshot(jpeg: Data, day: Day) async throws {
+        let uid = try SupabaseService.userId
+        let path = "\(uid.uuidString.lowercased())/\(UUID().uuidString).jpg"
+        try await db.storage.from("snapshots").upload(path, data: jpeg, options: FileOptions(contentType: "image/jpeg"))
+        try await db.from("snapshots").insert(Snapshot(userId: uid, day: day, storagePath: path)).execute()
+    }
+
+    func deleteSnapshot(_ s: Snapshot) async throws {
+        try await db.storage.from("snapshots").remove(paths: [s.storagePath])
+        try await db.from("snapshots").delete().eq("id", value: s.id.uuidString).execute()
+    }
+
+    func signedURL(bucket: String, path: String) async throws -> URL {
+        try await db.storage.from(bucket).createSignedURL(path: path, expiresIn: 3600)
     }
 
     /// Consecutive completed days ending today (or yesterday if today isn't done yet).

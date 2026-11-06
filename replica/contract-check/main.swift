@@ -57,9 +57,9 @@ func payloads() throws -> [String: [Any]] {
         "diary_groups": [try j(DiaryGroup(id: G1, userId: uid, name: "Second breakfast", position: 4))],
         "foods": [try j(food), try j(recipe)],
         "food_servings": [try j(FoodServing(id: S1, foodId: F1, name: "1 bar", grams: 60, isDefault: true))],
-        "recipe_ingredients": [try j(FoodLineRow(id: UUID(), food_id: F1, serving_id: S1, serving_qty: 2, amount_g: 120, position: 0, recipe_id: R1, meal_id: nil))],
+        "recipe_ingredients": [try j(FoodLineRow(id: UUID(), foodId: F1, servingId: S1, servingQty: 2, amountG: 120, position: 0, recipeId: R1, mealId: nil))],
         "meals": [try j(Meal(id: M1, userId: uid, name: "Usual breakfast"))],
-        "meal_items": [try j(FoodLineRow(id: UUID(), food_id: F1, serving_id: nil, serving_qty: 30, amount_g: 30, position: 0, recipe_id: nil, meal_id: M1))],
+        "meal_items": [try j(FoodLineRow(id: UUID(), foodId: F1, servingId: nil, servingQty: 30, amountG: 30, position: 0, recipeId: nil, mealId: M1))],
         "biometric_types": [try j(BiometricType(id: BT, userId: uid, key: "custom_bp_home", name: "Home BP", unit: "mmHg", category: "custom", valueKind: .pair))],
         "diary_entries": [try j(entry), try j(quick), try j(exercise), try j(bio), try j(note), try j(health)],
         "days": [try j(DayStatus(userId: uid, day: today, completed: true))],
@@ -119,7 +119,7 @@ if args.count > 1 && args[1] == "encode" {
     check("rpc_nutrient_totals", [NutrientTotalRow].self, rows)
     check("rpc_nutrient_sources", [NutrientSourceRow].self, rows)
     check("rpc_get_shared_food", [SharedFoodRow].self, rows)
-    check("rpc_is_gold", Bool.self, rows)
+    check("rpc_has_plus", Bool.self, rows)
     check("rpc_materialize_repeats", Int.self, rows)
     print(failures == 0 ? "decode: all passed" : "decode: \(failures) failed")
     exit(failures == 0 ? 0 : 1)

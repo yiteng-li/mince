@@ -28,6 +28,8 @@ struct Food: Identifiable, Codable, Hashable {
         case servings = "food_servings"
     }
 
+    /// Writes every column explicitly (nil becomes null, so an update can clear a field)
+    /// and never sends `servings`, which is only filled in on reads.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id)
@@ -126,6 +128,7 @@ struct Meal: Identifiable, Codable, Hashable {
 
     enum CodingKeys: String, CodingKey { case id, userId = "user_id", name, items = "meal_items" }
 
+    /// `items` is only filled in on reads; meal_items are saved separately.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id)
@@ -136,19 +139,35 @@ struct Meal: Identifiable, Codable, Hashable {
     var nutrients: Nutrients { (items ?? []).reduce(into: Nutrients()) { $0 += $1.nutrients } }
 }
 
-/// Row written to recipe_ingredients (recipe_id set) or meal_items (meal_id set).
+/// Row written to recipe_ingredients (recipeId set) or meal_items (mealId set).
 struct FoodLineRow: Encodable {
-    let id: UUID, food_id: UUID, serving_id: UUID?, serving_qty: Double?, amount_g: Double, position: Int
-    let recipe_id: UUID?, meal_id: UUID?
+    let id: UUID
+    let foodId: UUID
+    let servingId: UUID?
+    let servingQty: Double?
+    let amountG: Double
+    let position: Int
+    let recipeId: UUID?
+    let mealId: UUID?
+
+    enum CodingKeys: String, CodingKey {
+        case id, foodId = "food_id", servingId = "serving_id", servingQty = "serving_qty", amountG = "amount_g", position
+        case recipeId = "recipe_id", mealId = "meal_id"
+    }
 
     func encode(to encoder: Encoder) throws {
-        enum K: String, CodingKey { case id, food_id, serving_id, serving_qty, amount_g, position, recipe_id, meal_id }
-        var c = encoder.container(keyedBy: K.self)
-        try c.encode(id, forKey: .id); try c.encode(food_id, forKey: .food_id)
-        try c.encode(serving_id, forKey: .serving_id); try c.encode(serving_qty, forKey: .serving_qty)
-        try c.encode(amount_g, forKey: .amount_g); try c.encode(position, forKey: .position)
-        if let recipe_id { try c.encode(recipe_id, forKey: .recipe_id) }
-        if let meal_id { try c.encode(meal_id, forKey: .meal_id) }
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(foodId, forKey: .foodId)
+        // Sent even when nil: PostgREST takes a bulk insert's column list from the first row,
+        // so a missing key there would drop that column for every row.
+        try c.encode(servingId, forKey: .servingId)
+        try c.encode(servingQty, forKey: .servingQty)
+        try c.encode(amountG, forKey: .amountG)
+        try c.encode(position, forKey: .position)
+        // Only the parent column of the table being written exists there.
+        try c.encodeIfPresent(recipeId, forKey: .recipeId)
+        try c.encodeIfPresent(mealId, forKey: .mealId)
     }
 }
 

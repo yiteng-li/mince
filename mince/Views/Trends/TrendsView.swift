@@ -38,6 +38,12 @@ struct TrendsView: View {
     @State private var detail: Nutrient?
     @State private var exporting = false
 
+    /// The scores the user picked, or the overall score if they haven't picked any.
+    private var shownScores: [NutritionScore] {
+        let picked = app.profile?.selectedScores ?? []
+        return NutritionScore.all.filter { picked.isEmpty ? $0.id == "overall" : picked.contains($0.id) }
+    }
+
     private var to: Day { range == 0 ? customTo : .today }
     private var from: Day { range == 0 ? customFrom : Day.today.adding(days: -(range - 1)) }
 
@@ -48,7 +54,7 @@ struct TrendsView: View {
             List {
                 Section {
                     Picker("Range", selection: Binding(get: { range }, set: { r in
-                        if r == 7 || app.isGold { range = r } else { app.showPaywall = true }
+                        if r == 7 || app.hasPlus { range = r } else { app.showPaywall = true }
                     })) {
                         Text("7 days").tag(7)
                         Text("30 days").tag(30)
@@ -61,8 +67,8 @@ struct TrendsView: View {
                         DatePicker("From", selection: Binding(get: { customFrom.date }, set: { customFrom = Day($0) }), displayedComponents: .date)
                         DatePicker("To", selection: Binding(get: { customTo.date }, set: { customTo = Day($0) }), in: customFrom.date..., displayedComponents: .date)
                     }
-                    if !app.isGold {
-                        GoldRow(action: {}) { Text("Look back further than 7 days").font(Theme.Fonts.footnote) }
+                    if !app.hasPlus {
+                        PlusRow(action: {}) { Text("Look back further than 7 days").font(Theme.Fonts.footnote) }
                     }
                 }
 
@@ -79,10 +85,11 @@ struct TrendsView: View {
 
                 Section("Average macros") { MacroBars(totals: avg, targets: targets) }
 
-                if app.isGold {
+                if app.hasPlus {
                     Section("Scores") {
-                        ForEach(NutritionScore.all.filter { (app.profile?.selectedScores ?? []).contains($0.id) || app.profile?.selectedScores.isEmpty == true && $0.id == "overall" }) { s in
-                            NutrientBar(name: s.name, amount: Double(s.score(totals: avg.withDerived, goals: targets.goals) ?? 0), unit: "", target: 100, tint: Theme.Colors.success)
+                        ForEach(shownScores) { score in
+                            let value = score.score(totals: avg.withDerived, goals: targets.goals) ?? 0
+                            NutrientBar(name: score.name, amount: Double(value), unit: "", target: 100, tint: Theme.Colors.success)
                         }
                     }
                     Section {
@@ -92,9 +99,9 @@ struct TrendsView: View {
                     }
                 } else {
                     Section {
-                        GoldRow(action: {}) { Label("Nutrition scores", systemImage: "rosette") }
-                        GoldRow(action: {}) { Label("Food suggestions", systemImage: "lightbulb") }
-                        GoldRow(action: {}) { Label("Custom charts", systemImage: "chart.line.uptrend.xyaxis") }
+                        PlusRow(action: {}) { Label("Nutrition scores", systemImage: "rosette") }
+                        PlusRow(action: {}) { Label("Food suggestions", systemImage: "lightbulb") }
+                        PlusRow(action: {}) { Label("Custom charts", systemImage: "chart.line.uptrend.xyaxis") }
                     }
                 }
 
@@ -104,7 +111,7 @@ struct TrendsView: View {
             .navigationTitle("Trends")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button { app.requireGold { exporting = true } } label: { Image(systemName: "square.and.arrow.up") }
+                    Button { app.requirePlus { exporting = true } } label: { Image(systemName: "square.and.arrow.up") }
                         .accessibilityLabel("Export report")
                 }
             }
@@ -140,7 +147,7 @@ struct EnergyChart: View {
     }
 }
 
-/// Gold: foods that fill the biggest gaps in the selected period.
+/// mince+: foods that fill the biggest gaps in the selected period.
 struct SuggestionsView: View {
     @Environment(AppModel.self) private var app
     let totals: Nutrients

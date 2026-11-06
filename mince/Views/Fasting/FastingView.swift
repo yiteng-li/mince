@@ -1,7 +1,7 @@
 import SwiftUI
 import UserNotifications
 
-/// S17 (Gold): start, end, edit and schedule fasts.
+/// S17 (mince+): start, end, edit and schedule fasts.
 struct FastingView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
@@ -47,7 +47,7 @@ struct FastingView: View {
                     let gone = idx.map { schedules[$0] }
                     schedules.remove(atOffsets: idx)
                     Task {
-                        for s in gone { try? await GoldService().delete(s) }
+                        for s in gone { try? await PlusService().delete(s) }
                         await FastReminders.sync(schedules)
                     }
                 }
@@ -75,7 +75,7 @@ struct FastingView: View {
                     let done = fasts.filter { !$0.isOpen }
                     let gone = idx.map { done[$0] }
                     fasts.removeAll { f in gone.contains { $0.id == f.id } }
-                    Task { for f in gone { try? await GoldService().delete(f) } }
+                    Task { for f in gone { try? await PlusService().delete(f) } }
                 }
             }
         }
@@ -94,8 +94,8 @@ struct FastingView: View {
 
     private func load() async {
         do {
-            async let f = GoldService().fasts()
-            async let s = GoldService().fastSchedules()
+            async let f = PlusService().fasts()
+            async let s = PlusService().fastSchedules()
             (fasts, schedules) = try await (f, s)
         } catch { app.report(error) }
         loading = false
@@ -105,7 +105,7 @@ struct FastingView: View {
         guard let uid = app.userId else { return }
         let fast = Fast(userId: uid, startedAt: Date(), targetMinutes: Int(targetHours * 60))
         do {
-            try await GoldService().save(fast)
+            try await PlusService().save(fast)
             fasts.insert(fast, at: 0)
             await FastReminders.notifyEnd(of: fast)
             app.diaryChanged()
@@ -116,7 +116,7 @@ struct FastingView: View {
         guard var f = open else { return }
         f.endedAt = Date()
         do {
-            try await GoldService().save(f)
+            try await PlusService().save(f)
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["fast-end-\(f.id)"])
             await load()
             app.diaryChanged()
@@ -149,108 +149,5 @@ struct FastRing: View {
         }
         .frame(width: Theme.Layout.ringSize, height: Theme.Layout.ringSize)
         .accessibilityElement(children: .combine)
-    }
-}
-
-/// Fix a past fast's start/end.
-struct FastEditor: View {
-    @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
-    @State var fast: Fast
-    var onSave: () async -> Void
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                DatePicker("Started", selection: $fast.startedAt)
-                DatePicker("Ended", selection: Binding(get: { fast.endedAt ?? Date() }, set: { fast.endedAt = $0 }), in: fast.startedAt...)
-                Stepper("Goal \(fast.targetMinutes / 60) h", value: $fast.targetMinutes, in: 60...10080, step: 60)
-            }
-            .navigationTitle("Edit fast")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { Task { do { try await GoldService().save(fast); await onSave(); dismiss() } catch { app.report(error) } } }
-                        .disabled((fast.endedAt ?? Date()) <= fast.startedAt)
-                }
-            }
-        }
-    }
-}
-
-struct FastScheduleEditor: View {
-    @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
-    var onSave: () async -> Void
-    @State private var weekdays: Set<Int> = Set(0...6)
-    @State private var start = Calendar.current.date(bySettingHour: 20, minute: 0, second: 0, of: Date())!
-    @State private var hours = 16
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                DatePicker("Start at", selection: $start, displayedComponents: .hourAndMinute)
-                Stepper("Length \(hours) h", value: $hours, in: 1...168)
-                Section("Days") {
-                    ForEach(0..<7) { d in
-                        Toggle(Calendar.current.weekdaySymbols[d], isOn: Binding(get: { weekdays.contains(d) }, set: { on in
-                            if on { weekdays.insert(d) } else if weekdays.count > 1 { weekdays.remove(d) }
-                        }))
-                    }
-                }
-            }
-            .navigationTitle("Fasting schedule")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        Task {
-                            guard let uid = app.userId else { return }
-                            let c = Calendar.current.dateComponents([.hour, .minute], from: start)
-                            let s = FastSchedule(userId: uid, weekdays: weekdays.sorted(),
-                                                 startTime: String(format: "%02d:%02d:00", c.hour ?? 20, c.minute ?? 0), targetMinutes: hours * 60)
-                            do { try await GoldService().save(s); await onSave(); dismiss() } catch { app.report(error) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Local notifications for fasts (no server jobs needed).
-enum FastReminders {
-    static func authorize() async -> Bool {
-        (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
-    }
-
-    static func notifyEnd(of fast: Fast) async {
-        guard await authorize() else { return }
-        let content = UNMutableNotificationContent()
-        content.title = "Fast complete"
-        content.body = "You reached your \(fast.targetMinutes / 60)-hour goal."
-        let fireAt = fast.startedAt.addingTimeInterval(fast.target).timeIntervalSinceNow
-        guard fireAt > 0 else { return }
-        try? await UNUserNotificationCenter.current().add(
-            UNNotificationRequest(identifier: "fast-end-\(fast.id)", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: fireAt, repeats: false)))
-    }
-
-    /// One repeating reminder per scheduled weekday.
-    static func sync(_ schedules: [FastSchedule]) async {
-        let center = UNUserNotificationCenter.current()
-        let old = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix("fast-schedule-") }
-        center.removePendingNotificationRequests(withIdentifiers: old)
-        guard !schedules.isEmpty, await authorize() else { return }
-        for s in schedules {
-            for d in s.weekdays {
-                let content = UNMutableNotificationContent()
-                content.title = "Time to start your fast"
-                content.body = "\(s.targetMinutes / 60)-hour fast. Open mince to start the timer."
-                var when = DateComponents()
-                (when.weekday, when.hour, when.minute) = (d + 1, s.hour, s.minute)
-                try? await center.add(UNNotificationRequest(identifier: "fast-schedule-\(s.id)-\(d)", content: content,
-                                                            trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
-            }
-        }
     }
 }

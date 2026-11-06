@@ -75,9 +75,9 @@ struct DashboardView: View {
             HStack {
                 Text("Nutrition scores").font(Theme.Fonts.heading)
                 Spacer()
-                if !app.isGold { GoldBadge() }
+                if !app.hasPlus { PlusBadge() }
             }
-            if app.isGold {
+            if app.hasPlus {
                 let ids = app.profile?.selectedScores.isEmpty == false ? app.profile!.selectedScores : ["overall", "vitamins", "minerals"]
                 ForEach(NutritionScore.all.filter { ids.contains($0.id) }) { s in
                     let value = s.score(totals: totals.withDerived, goals: goals)
@@ -111,7 +111,7 @@ struct DashboardView: View {
                 }
                 .chartYScale(domain: .automatic(includesZero: false))
                 .frame(height: 140)
-                .accessibilityLabel("Weight over the last \(app.isGold ? 90 : 7) days")
+                .accessibilityLabel("Weight over the last \(app.hasPlus ? 90 : 7) days")
             }
         }
         .card()
@@ -122,11 +122,11 @@ struct DashboardView: View {
             HStack {
                 Label("Coach", systemImage: "sparkles").font(Theme.Fonts.heading)
                 Spacer()
-                if !app.isGold { GoldBadge() }
+                if !app.hasPlus { PlusBadge() }
             }
             if tips.isEmpty {
                 Button(loadingTips ? "Thinking…" : "Get suggestions from your last week") {
-                    app.requireGold {
+                    app.requirePlus {
                         Task {
                             loadingTips = true
                             defer { loadingTips = false }
@@ -146,17 +146,18 @@ struct DashboardView: View {
         async let done = DiaryService().completedDays(since: Day.today.adding(days: -400))
         entries = (try? await e) ?? entries
         streak = DiaryService.streak(completed: (try? await done) ?? [])
-        if let w = app.biometricType("weight") {
-            weights = (try? await DiaryService().entries(from: Day.today.adding(days: app.isGold ? -90 : -6), to: .today, kind: .biometric, biometricTypeId: w.id)) ?? []
+        if let weightType = app.biometricType("weight") {
+            let from = Day.today.adding(days: app.hasPlus ? -90 : -6)   // Basic sees a week of history
+            weights = (try? await DiaryService().entries(from: from, to: .today, kind: .biometric, biometricTypeId: weightType.id)) ?? []
         }
-        if app.isGold {
-            openFast = (try? await GoldService().fasts(limit: 1))?.first { $0.isOpen }
-            pinned = ((try? await GoldService().charts()) ?? []).filter(\.pinned)
+        if app.hasPlus {
+            openFast = (try? await PlusService().fasts(limit: 1))?.first { $0.isOpen }
+            pinned = ((try? await PlusService().charts()) ?? []).filter(\.pinned)
         }
     }
 }
 
-/// Gold: pick up to eight nutrition scores.
+/// mince+: pick up to eight nutrition scores.
 struct ScoresPickerView: View {
     @Environment(AppModel.self) private var app
 

@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 
 /// profiles, targets, macro schedule, and the read-only catalogues.
+/// In demo mode (`-demo`) every method uses the in-memory data in Demo.swift instead.
 struct ProfileService {
     private var db: SupabaseClient { SupabaseService.shared }
 
@@ -66,7 +67,7 @@ struct ProfileService {
         try await db.from("nutrient_targets").delete().eq("nutrient_key", value: key).execute()
     }
 
-    // MARK: Macro Scheduler (Gold)
+    // MARK: Macro Scheduler (mince+)
 
     func macroTemplates() async throws -> [MacroTemplate] {
         if Demo.active { return Demo.templates.sorted { $0.name < $1.name } }

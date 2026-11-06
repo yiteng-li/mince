@@ -8,8 +8,9 @@ export function safeURL(raw: string): URL {
   let u: URL;
   try { u = new URL(raw); } catch { throw new HttpError(400, "That doesn't look like a link."); }
   const h = u.hostname.toLowerCase();
-  const ipLike = /^[\d.]+$/.test(h) || h.includes(":");
-  if (!["http:", "https:"].includes(u.protocol) || ipLike || !h.includes(".") || h.endsWith(".local") || h.endsWith(".internal") || h === "localhost") {
+  const isIPAddress = /^[\d.]+$/.test(h) || h.includes(":"); // IPv4, decimal-encoded IPv4, or IPv6
+  const isInternalName = !h.includes(".") || h === "localhost" || h.endsWith(".local") || h.endsWith(".internal");
+  if (!["http:", "https:"].includes(u.protocol) || isIPAddress || isInternalName) {
     throw new HttpError(400, "Use a public recipe link.");
   }
   return u;
@@ -46,10 +47,33 @@ export function findRecipe(html: string): JsonLd | null {
   return null;
 }
 
+/**
+ * Text lines from a schema.org field. Recipes store ingredients and steps as plain strings,
+ * as HowToStep objects ({text}), or as HowToSection objects whose steps are in itemListElement.
+ */
+function textLines(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string") return [item];
+    if (item && typeof item === "object") {
+      const step = item as JsonLd;
+      return textLines(step.text ?? step.itemListElement);
+    }
+    return [];
+  });
+}
+
+/** The recipe as plain text for the model: title, yield, ingredient lines, method. */
 export function recipeText(r: JsonLd): string {
-  const lines = (v: unknown): string[] =>
-    Array.isArray(v) ? v.flatMap((x) => typeof x === "string" ? [x] : x && typeof x === "object" ? lines((x as JsonLd).text ?? (x as JsonLd).itemListElement) : []) : typeof v === "string" ? [v] : [];
-  return [`Title: ${r.name ?? ""}`, `Yield: ${JSON.stringify(r.recipeYield ?? "")}`, "Ingredients:", ...lines(r.recipeIngredient), "Instructions:", ...lines(r.recipeInstructions)].join("\n");
+  return [
+    `Title: ${r.name ?? ""}`,
+    `Yield: ${JSON.stringify(r.recipeYield ?? "")}`,
+    "Ingredients:",
+    ...textLines(r.recipeIngredient),
+    "Instructions:",
+    ...textLines(r.recipeInstructions),
+  ].join("\n");
 }
 
 export function visibleText(html: string): string {

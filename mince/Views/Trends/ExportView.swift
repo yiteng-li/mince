@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S34 (Gold): a PDF report for a health professional, and CSV exports of totals and the raw diary.
+/// S34 (mince+): a PDF report for a health professional, and CSV exports of totals and the raw diary.
 struct ExportView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
@@ -62,7 +62,11 @@ struct ExportView: View {
         return url
     }
 
-    private func csvField(_ s: String) -> String { s.contains(where: { ",\"\n".contains($0) }) ? "\"\(s.replacingOccurrences(of: "\"", with: "\"\""))\"" : s }
+    /// Quotes a CSV field when it contains a comma, quote or newline (quotes inside are doubled).
+    private func csvField(_ s: String) -> String {
+        guard s.contains(where: { ",\"\n".contains($0) }) else { return s }
+        return "\"" + s.replacingOccurrences(of: "\"", with: "\"\"") + "\""
+    }
 
     private func totalsCSV() throws -> URL {
         let keys = app.nutrients.map(\.key)

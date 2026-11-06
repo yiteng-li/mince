@@ -1,5 +1,7 @@
 import Foundation
 
+// Data for mince+ features: Macro Scheduler, Repeat Items, fasting and custom charts.
+
 struct MacroTemplate: Identifiable, Codable, Hashable {
     var id = UUID()
     var userId: UUID
@@ -43,6 +45,7 @@ struct RepeatRule: Identifiable, Codable, Hashable {
         case amountG = "amount_g", groupId = "group_id", weekdays, startsOn = "starts_on", endsOn = "ends_on", food = "foods", meal = "meals"
     }
 
+    /// Leaves out the `foods` / `meals` names, which are only filled in on reads.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(id, forKey: .id)
@@ -117,28 +120,4 @@ struct CustomChart: Identifiable, Codable, Hashable {
     var position = 0
 
     enum CodingKeys: String, CodingKey { case id, userId = "user_id", title, series, rangeDays = "range_days", pinned, position }
-}
-
-struct Snapshot: Identifiable, Codable, Hashable {
-    var id = UUID()
-    var userId: UUID
-    var day: Day
-    var storagePath: String
-    enum CodingKeys: String, CodingKey { case id, userId = "user_id", day, storagePath = "storage_path" }
-}
-
-/// One row from the `nutrient_totals` RPC.
-struct NutrientTotalRow: Decodable, Hashable {
-    var day: Day
-    var nutrientKey: String
-    var amount: Double
-    enum CodingKeys: String, CodingKey { case day, nutrientKey = "nutrient_key", amount }
-}
-
-struct NutrientSourceRow: Decodable, Hashable, Identifiable {
-    var foodId: UUID
-    var name: String
-    var amount: Double
-    var id: UUID { foodId }
-    enum CodingKeys: String, CodingKey { case foodId = "food_id", name, amount }
 }

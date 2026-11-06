@@ -86,3 +86,19 @@ struct NutrientGoal: Hashable {
     var min: Double?
     var max: Double?
 }
+
+/// One row from the `nutrient_totals` RPC.
+struct NutrientTotalRow: Decodable, Hashable {
+    var day: Day
+    var nutrientKey: String
+    var amount: Double
+    enum CodingKeys: String, CodingKey { case day, nutrientKey = "nutrient_key", amount }
+}
+
+struct NutrientSourceRow: Decodable, Hashable, Identifiable {
+    var foodId: UUID
+    var name: String
+    var amount: Double
+    var id: UUID { foodId }
+    enum CodingKeys: String, CodingKey { case foodId = "food_id", name, amount }
+}

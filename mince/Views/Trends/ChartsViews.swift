@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-/// Gold: user-defined charts of any nutrient or biometric, up to two series (dual axis), pinnable to the dashboard.
+/// mince+: user-defined charts of any nutrient or biometric, up to two series (dual axis), pinnable to the dashboard.
 struct CustomChartsView: View {
     @Environment(AppModel.self) private var app
     @State private var charts: [CustomChart] = []
@@ -21,9 +21,9 @@ struct CustomChartsView: View {
                         Button("Edit") { editing = c }
                         Button(c.pinned ? "Unpin from dashboard" : "Pin to dashboard") {
                             var x = c; x.pinned.toggle()
-                            Task { try? await GoldService().save(x); await load() }
+                            Task { try? await PlusService().save(x); await load() }
                         }
-                        Button("Delete", role: .destructive) { Task { try? await GoldService().delete(c); await load() } }
+                        Button("Delete", role: .destructive) { Task { try? await PlusService().delete(c); await load() } }
                     }
             }
         }
@@ -35,7 +35,7 @@ struct CustomChartsView: View {
         .sheet(isPresented: $creating, onDismiss: { Task { await load() } }) { CustomChartEditor(chart: nil) }
     }
 
-    private func load() async { charts = (try? await GoldService().charts()) ?? [] }
+    private func load() async { charts = (try? await PlusService().charts()) ?? [] }
 }
 
 struct CustomChartCard: View {
@@ -164,7 +164,7 @@ struct CustomChartEditor: View {
         c.series = [s1] + [parse(second)].compactMap { $0 }
         c.rangeDays = range
         c.pinned = pinned
-        do { try await GoldService().save(c); dismiss() } catch { app.report(error) }
+        do { try await PlusService().save(c); dismiss() } catch { app.report(error) }
     }
 }
 
@@ -195,8 +195,9 @@ struct BiometricChartsView: View {
                     .chartYScale(domain: .automatic(includesZero: false))
                     .frame(height: 220)
                     let values = rows.map { display($0, type) }
-                    LabeledContent("Average", value: (values.reduce(0, +) / Double(values.count)).formatted(.number.precision(.fractionLength(0...1))))
-                    LabeledContent("Range", value: "\(values.min()!.formatted(.number.precision(.fractionLength(0...1)))) – \(values.max()!.formatted(.number.precision(.fractionLength(0...1))))")
+                    let format = { (v: Double) in v.formatted(.number.precision(.fractionLength(0...1))) }
+                    LabeledContent("Average", value: format(values.reduce(0, +) / Double(values.count)))
+                    LabeledContent("Range", value: "\(format(values.min() ?? 0)) – \(format(values.max() ?? 0))")
                 }
             }
         }

@@ -4,7 +4,7 @@ import Foundation
 import Observation
 import Supabase
 
-/// App-wide state: session, profile, catalogues, Gold, the selected day, targets.
+/// App-wide state: session, profile, catalogues, mince+, the selected day, targets.
 /// Screens own their own data; this holds what every screen needs.
 @MainActor
 @Observable
@@ -22,7 +22,7 @@ final class AppModel {
     private(set) var macroTemplates: [MacroTemplate] = []
     private(set) var macroSchedule: [Int: UUID] = [:]
     private(set) var currentWeightKg: Double?
-    private(set) var serverGold = false
+    private(set) var serverPlus = false
 
     var selectedDay: Day = .today
     /// Entries copied with "Copy", pasted with "Paste".
@@ -40,14 +40,14 @@ final class AppModel {
     private var appleNonce: String?
 
     var userId: UUID? { session?.user.id ?? demoUserId }
-    /// Gold for UI purposes: server truth, or a fresh device entitlement the server hasn't confirmed yet.
-    var isGold: Bool { serverGold || store.hasActiveEntitlement }
+    /// mince+ for UI purposes: server truth, or a fresh device entitlement the server hasn't confirmed yet.
+    var hasPlus: Bool { serverPlus || store.hasActiveEntitlement }
     var unitSystem: UnitSystem { profile?.unitSystem ?? .metric }
     var energyUnit: EnergyUnit { profile?.energyUnit ?? .kcal }
     var weightKg: Double { currentWeightKg ?? 70 }
 
     init() {
-        store.onServerStatus = { [weak self] gold in self?.serverGold = gold }
+        store.onServerStatus = { [weak self] plus in self?.serverPlus = plus }
         if Demo.active { loadDemo(); return }
         Task { await observeAuth() }
     }
@@ -59,7 +59,7 @@ final class AppModel {
         dri = Demo.dri
         biometricTypes = Demo.biometricTypes
         groups = Demo.groups
-        serverGold = Demo.gold
+        serverPlus = Demo.plus
         currentWeightKg = 64.2
         phase = ["signedOut": .signedOut, "onboarding": .onboarding][UserDefaults.standard.string(forKey: "phase") ?? ""] ?? .ready
     }
@@ -88,14 +88,14 @@ final class AppModel {
             async let o = ProfileService().overrides()
             async let b = ProfileService().biometricTypes()
             async let g = DiaryService().groups()
-            async let gold = GoldService().isGold()
+            async let plus = PlusService().hasPlus()
             (profile, nutrients, dri, overrides, biometricTypes, groups) = try await (p, n, d, o, b, g)
-            serverGold = (try? await gold) ?? false
+            serverPlus = (try? await plus) ?? false
             await refreshWeight()
             await refreshMacroSchedule()
             phase = profile?.isOnboarded == true ? .ready : .onboarding
             await store.load()
-            if store.hasActiveEntitlement && !serverGold { await store.restore() }
+            if store.hasActiveEntitlement && !serverPlus { await store.restore() }
         } catch {
             errorMessage = "Couldn't load your account: \(error.localizedDescription)"
             phase = session == nil ? .signedOut : .ready
@@ -108,7 +108,7 @@ final class AppModel {
     }
 
     func refreshMacroSchedule() async {
-        guard isGold else { macroSchedule = [:]; return }
+        guard hasPlus else { macroSchedule = [:]; return }
         macroTemplates = (try? await ProfileService().macroTemplates()) ?? []
         let rows = (try? await ProfileService().macroSchedule()) ?? []
         macroSchedule = Dictionary(rows.map { ($0.weekday, $0.templateId) }, uniquingKeysWith: { a, _ in a })
@@ -117,7 +117,7 @@ final class AppModel {
     func refreshOverrides() async { overrides = (try? await ProfileService().overrides()) ?? overrides }
     func refreshBiometricTypes() async { biometricTypes = (try? await ProfileService().biometricTypes()) ?? biometricTypes }
     func refreshGroups() async { groups = (try? await DiaryService().groups()) ?? groups }
-    func refreshGold() async { serverGold = (try? await GoldService().isGold()) ?? serverGold }
+    func refreshPlus() async { serverPlus = (try? await PlusService().hasPlus()) ?? serverPlus }
 
     func saveProfile(_ p: Profile) async {
         if Demo.active { profile = p; return }
@@ -161,28 +161,28 @@ final class AppModel {
     /// A food entry for the selected day.
     func foodEntry(_ food: Food, serving: FoodServing, qty: Double, groupId: UUID?, at time: Date?) -> DiaryEntry? {
         guard let uid = userId else { return nil }
-        return DiaryEntry(userId: uid, day: selectedDay, kind: .food, groupId: groupId ?? defaultGroupId(), loggedAt: isGold ? time : nil,
+        return DiaryEntry(userId: uid, day: selectedDay, kind: .food, groupId: groupId ?? defaultGroupId(), loggedAt: hasPlus ? time : nil,
                           foodId: food.id, servingId: serving.storedId, servingQty: qty, amountG: serving.grams * qty, food: food,
                           serving: serving.isBuiltIn ? nil : .init(name: serving.name))
     }
 
     func targets(for day: Day) -> DayTargets {
-        let template = isGold ? macroSchedule[day.weekday].flatMap { id in macroTemplates.first { $0.id == id } } : nil
+        let template = hasPlus ? macroSchedule[day.weekday].flatMap { id in macroTemplates.first { $0.id == id } } : nil
         return TargetCalculator.targets(profile: profile ?? Profile(id: UUID()), weightKg: weightKg, dri: dri, overrides: overrides,
                                         template: template, healthActiveEnergy: profile?.useHealthActiveEnergy ?? false)
     }
 
-    /// Runs `action` if Gold, otherwise opens the paywall.
-    func requireGold(_ action: () -> Void) {
-        if isGold { action() } else { showPaywall = true }
+    /// Runs `action` if mince+, otherwise opens the paywall.
+    func requirePlus(_ action: () -> Void) {
+        if hasPlus { action() } else { showPaywall = true }
     }
 
     func diaryChanged() { diaryVersion += 1 }
 
-    /// Opens a logging flow, sending Gold-only ones to the paywall for Basic users.
+    /// Opens a logging flow, sending mince+ only ones to the paywall for Basic users.
     func open(_ sheet: LogSheet) {
         switch sheet {
-        case .photo, .voice, .fasting: requireGold { activeSheet = sheet }
+        case .photo, .voice, .fasting: requirePlus { activeSheet = sheet }
         default: activeSheet = sheet
         }
     }
@@ -199,7 +199,7 @@ final class AppModel {
     }
 
     func report(_ error: Error) {
-        if case AppError.goldRequired = error { showPaywall = true } else { errorMessage = error.localizedDescription }
+        if case AppError.plusRequired = error { showPaywall = true } else { errorMessage = error.localizedDescription }
     }
 
     // MARK: auth
@@ -250,81 +250,5 @@ final class AppModel {
     func deleteAccount() async throws {
         try await AIService().deleteAccount()
         await signOut()
-    }
-}
-
-/// Every logging flow, opened from the plus menu, the diary, Siri or a deep link.
-enum LogSheet: Identifiable, Hashable {
-    case food(groupId: UUID?)
-    case barcode(groupId: UUID?)
-    case photo(groupId: UUID?)
-    case voice(groupId: UUID?, text: String?)
-    case quickAdd(groupId: UUID?)
-    case exercise
-    case biometric(typeKey: String?)
-    case note(groupId: UUID?)
-    case water
-    case fasting
-    case editEntry(DiaryEntry)
-    case sharedFood(UUID)
-
-    var id: String { "\(self)" }
-}
-
-/// One action in the plus menu. Order and visibility are saved in profiles.plus_menu.
-enum PlusAction: String, CaseIterable, Identifiable {
-    case food, barcode, photo, voice, quickAdd = "quick_add", exercise, biometric, weight, water, note, fast
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .food: "Food"
-        case .barcode: "Scan barcode"
-        case .photo: "Photo"
-        case .voice: "Voice"
-        case .quickAdd: "Quick add"
-        case .exercise: "Exercise"
-        case .biometric: "Biometric"
-        case .weight: "Weight"
-        case .water: "Water"
-        case .note: "Note"
-        case .fast: "Fast"
-        }
-    }
-    var symbol: String {
-        switch self {
-        case .food: "magnifyingglass"
-        case .barcode: "barcode.viewfinder"
-        case .photo: "camera"
-        case .voice: "mic"
-        case .quickAdd: "bolt"
-        case .exercise: "figure.run"
-        case .biometric: "heart.text.square"
-        case .weight: "scalemass"
-        case .water: "drop"
-        case .note: "note.text"
-        case .fast: "timer"
-        }
-    }
-    var isGold: Bool { [.photo, .voice, .fast].contains(self) }
-
-    var sheet: LogSheet {
-        switch self {
-        case .food: .food(groupId: nil)
-        case .barcode: .barcode(groupId: nil)
-        case .photo: .photo(groupId: nil)
-        case .voice: .voice(groupId: nil, text: nil)
-        case .quickAdd: .quickAdd(groupId: nil)
-        case .exercise: .exercise
-        case .biometric: .biometric(typeKey: nil)
-        case .weight: .biometric(typeKey: "weight")
-        case .water: .water
-        case .note: .note(groupId: nil)
-        case .fast: .fasting
-        }
-    }
-
-    static func ordered(_ saved: [String]) -> [PlusAction] {
-        let picked = saved.compactMap(PlusAction.init(rawValue:))
-        return picked.isEmpty ? allCases : picked
     }
 }

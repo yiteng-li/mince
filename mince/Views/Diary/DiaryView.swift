@@ -1,83 +1,5 @@
 import SwiftUI
 
-@MainActor
-@Observable
-final class DiaryModel {
-    var entries: [DiaryEntry] = []
-    var isLoading = true
-    var error: String?
-    var completed = false
-    var toast: Toast?
-
-    func load(day: Day, gold: Bool) async {
-        error = nil
-        do {
-            if gold { try? await DiaryService().materializeRepeats(on: day) }
-            async let e = DiaryService().entries(on: day)
-            async let c = DiaryService().completedDays(since: day)
-            let (rows, done) = try await (e, c)
-            entries = rows
-            completed = done.contains(day)
-        } catch {
-            self.error = error.localizedDescription
-        }
-        isLoading = false
-    }
-
-    var consumed: Nutrients { entries.reduce(into: Nutrients()) { $0 += $1.consumed } }
-    var exerciseKcal: Double { entries.filter { $0.kind == .exercise }.compactMap(\.energyKcal).reduce(0, +) }
-
-    func entries(in group: DiaryGroup?, sortedByTime: Bool) -> [DiaryEntry] {
-        let rows = entries.filter { [.food, .quickAdd, .note].contains($0.kind) && $0.groupId == group?.id }
-        return sortedByTime ? rows.sorted { ($0.loggedAt ?? .distantFuture) < ($1.loggedAt ?? .distantFuture) } : rows
-    }
-
-    func delete(_ ids: Set<UUID>, app: AppModel) async {
-        let removed = entries.filter { ids.contains($0.id) }
-        entries.removeAll { ids.contains($0.id) }
-        do {
-            try await DiaryService().delete(ids: Array(ids))
-            app.diaryChanged()
-            toast = Toast(message: removed.count == 1 ? "Entry deleted" : "\(removed.count) entries deleted") { [weak self] in
-                Task {
-                    _ = try? await DiaryService().insert(removed)
-                    self?.entries += removed
-                    app.diaryChanged()
-                }
-            }
-        } catch {
-            entries += removed
-            app.report(error)
-        }
-    }
-
-    func paste(_ copied: [DiaryEntry], day: Day, groupId: UUID?, app: AppModel) async {
-        do {
-            let inserted = try await DiaryService().insert(copied.map { $0.copied(to: day, groupId: groupId) })
-            entries += inserted
-            app.diaryChanged()
-            toast = Toast(message: "Pasted \(inserted.count) item\(inserted.count == 1 ? "" : "s")")
-        } catch { app.report(error) }
-    }
-
-    func move(_ entry: DiaryEntry, to group: DiaryGroup, app: AppModel) async {
-        var e = entry
-        e.groupId = group.id
-        do {
-            let saved = try await DiaryService().update(e)
-            if let i = entries.firstIndex(where: { $0.id == e.id }) { entries[i] = saved }
-        } catch { app.report(error) }
-    }
-
-    func toggleComplete(day: Day, app: AppModel) async {
-        do {
-            try await DiaryService().setCompleted(!completed, day: day)
-            completed.toggle()
-            app.diaryChanged()
-        } catch { app.report(error) }
-    }
-}
-
 /// S05: one day of the diary.
 struct DiaryView: View {
     @Environment(AppModel.self) private var app
@@ -157,7 +79,7 @@ struct DiaryView: View {
         }
     }
 
-    private func reload() async { await model.load(day: app.selectedDay, gold: app.isGold) }
+    private func reload() async { await model.load(day: app.selectedDay, hasPlus: app.hasPlus) }
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
@@ -169,8 +91,8 @@ struct DiaryView: View {
         ToolbarItem(placement: .primaryAction) { PlusButton() }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                Toggle(isOn: Binding(get: { sortByTime }, set: { v in app.requireGold { sortByTime = v } })) {
-                    Label("Sort by time\(app.isGold ? "" : " (Gold)")", systemImage: "clock")
+                Toggle(isOn: Binding(get: { sortByTime }, set: { v in app.requirePlus { sortByTime = v } })) {
+                    Label("Sort by time\(app.hasPlus ? "" : " (mince+)")", systemImage: "clock")
                 }
                 if !app.clipboard.isEmpty {
                     Button { Task { await model.paste(app.clipboard, day: app.selectedDay, groupId: nil, app: app) } } label: {
@@ -220,9 +142,9 @@ struct DiaryView: View {
             }
         } header: {
             HStack {
-                // One text so it wraps at large sizes; the subtotal is Gold.
+                // One text so it wraps at large sizes; the subtotal is mince+.
                 let kcal = rows.reduce(0) { $0 + $1.consumed[.energy] }
-                Text(app.isGold && !rows.isEmpty ? "\(group.name) · \(Units.energy(kcal, app.energyUnit))" : group.name)
+                Text(app.hasPlus && !rows.isEmpty ? "\(group.name) · \(Units.energy(kcal, app.energyUnit))" : group.name)
                     .monospacedDigit()
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer()
@@ -275,7 +197,7 @@ struct DiaryView: View {
     }
 
     private func entryRow(_ entry: DiaryEntry) -> some View {
-        DiaryEntryRow(entry: entry, showTime: app.isGold)
+        DiaryEntryRow(entry: entry, showTime: app.hasPlus)
             .tag(entry.id)
             .contentShape(Rectangle())
             .onTapGesture {
@@ -300,94 +222,10 @@ struct DiaryView: View {
                     }
                 }
                 if entry.kind == .food {
-                    Button { app.requireGold { repeatEntry = entry } } label: { Label("Repeat\(app.isGold ? "" : " (Gold)")", systemImage: "repeat") }
+                    Button { app.requirePlus { repeatEntry = entry } } label: { Label("Repeat\(app.hasPlus ? "" : " (mince+)")", systemImage: "repeat") }
                 }
                 Button(role: .destructive) { Task { await model.delete([entry.id], app: app) } } label: { Label("Delete", systemImage: "trash") }
             }
-    }
-}
-
-struct DiaryEntryRow: View {
-    @Environment(AppModel.self) private var app
-    let entry: DiaryEntry
-    var showTime = false
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: Theme.Space.xxs) {
-                    if entry.repeatRuleId != nil { Image(systemName: "repeat").font(.caption).foregroundStyle(Theme.Colors.textMuted).accessibilityLabel("Repeats") }
-                    if entry.source == .health { Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.Colors.danger).accessibilityLabel("From Apple Health") }
-                    Text(title).font(Theme.Fonts.body).lineLimit(2)
-                }
-                if let subtitle { Text(subtitle).font(Theme.Fonts.footnote).foregroundStyle(Theme.Colors.textMuted).lineLimit(3) }
-                if showTime, let t = entry.loggedAt {
-                    Text(t, style: .time).font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textMuted)
-                }
-            }
-            Spacer()
-            if let trailing {
-                Text(trailing).font(Theme.Fonts.label.monospacedDigit())
-                    .foregroundStyle(entry.kind == .exercise ? Theme.Colors.success : Theme.Colors.text)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var isWater: Bool { entry.kind == .quickAdd && entry.nutrients?.keys.sorted() == ["water"] }
-
-    private var title: String {
-        switch entry.kind {
-        case .food: entry.food?.displayName ?? "Food"
-        case .quickAdd: isWater ? "Water" : entry.title ?? "Quick add"
-        case .exercise: entry.exercise?.name ?? entry.title ?? "Exercise"
-        case .biometric: app.biometricType(id: entry.biometricTypeId)?.name ?? "Biometric"
-        case .note: entry.note ?? ""
-        }
-    }
-
-    private var subtitle: String? {
-        switch entry.kind {
-        case .food:
-            let g = Units.amount(entry.amountG ?? 0, unit: "g")
-            if let q = entry.servingQty, let s = entry.serving?.name, s != "g" {
-                return "\(q.formatted(.number.precision(.fractionLength(0...2)))) × \(s) · \(g)"
-            }
-            return g
-        case .exercise: return entry.minutes.map { "\(Int($0)) min" }
-        case .quickAdd where isWater: return nil
-        case .quickAdd:
-            let n = entry.nutrients ?? [:]
-            return "P \(Int(n[.protein]))g · C \(Int(n[.carbs]))g · F \(Int(n[.fat]))g"
-        default: return nil
-        }
-    }
-
-    private var trailing: String? {
-        switch entry.kind {
-        case .quickAdd where isWater: "\(Int(entry.nutrients?["water"] ?? 0)) mL"
-        case .food, .quickAdd: Units.energy(entry.consumed[.energy], app.energyUnit)
-        case .exercise: "−" + Units.energy(entry.energyKcal ?? 0, app.energyUnit)
-        case .biometric: BiometricFormat.value(entry, type: app.biometricType(id: entry.biometricTypeId), units: app.unitSystem)
-        case .note: nil
-        }
-    }
-}
-
-enum BiometricFormat {
-    static func value(_ e: DiaryEntry, type: BiometricType?, units: UnitSystem) -> String {
-        guard let v = e.value, let type else { return "" }
-        switch type.valueKind {
-        case .pair: return "\(Int(v))/\(Int(e.value2 ?? 0)) \(type.unit)"
-        case .minutes: return "\(Int(v) / 60) h \(Int(v) % 60) m"
-        case .scale17, .scale110: return "\(Int(v)) / \(type.valueKind == .scale17 ? 7 : 10)"
-        case .number:
-            if type.key == "weight" { return Units.weight(v, units) }
-            if ["waist", "hips", "chest", "neck", "bicep", "thigh", "calf"].contains(type.key), units != .metric {
-                return "\((v / Units.cmPerInch).formatted(.number.precision(.fractionLength(0...1)))) in"
-            }
-            return "\(v.formatted(.number.precision(.fractionLength(0...1)))) \(type.unit)"
-        }
     }
 }
 
