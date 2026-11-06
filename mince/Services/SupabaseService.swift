@@ -27,19 +27,19 @@ enum SupabaseService {
 
 enum AppError: LocalizedError {
     case signedOut
-    case goldRequired
+    case plusRequired
     case message(String)
 
     var errorDescription: String? {
         switch self {
         case .signedOut: "You're signed out. Sign in again to continue."
-        case .goldRequired: "This needs mince Gold."
+        case .plusRequired: "This needs mince+."
         case .message(let m): m
         }
     }
 
-    /// Maps the database's `gold_required` exception to `.goldRequired`.
+    /// Maps the database's `plus_required` exception to `.plusRequired`.
     static func wrap(_ error: Error) -> Error {
-        "\(error)".contains("gold_required") ? AppError.goldRequired : error
+        "\(error)".contains("plus_required") ? AppError.plusRequired : error
     }
 }

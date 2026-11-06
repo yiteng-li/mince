@@ -1,5 +1,5 @@
-// Photo Log (Gold): identify foods and portions in a meal photo the app uploaded to meal-photos/<uid>/.
-import { caller, HttpError, json, requireGold, serve, str, takeQuota } from "../_shared/http.ts";
+// Photo Log (mince+): identify foods and portions in a meal photo the app uploaded to meal-photos/<uid>/.
+import { caller, HttpError, json, requirePlus, serve, str, takeQuota } from "../_shared/http.ts";
 import { type Item, itemsSchema, structured } from "../_shared/claude.ts";
 import { matchItems } from "../_shared/match.ts";
 import { encodeBase64 } from "jsr:@std/encoding@1/base64";
@@ -8,7 +8,7 @@ export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const path = str(body.path, 200);
   if (!path || !path.startsWith(`${user.id}/`) || path.includes("..")) throw new HttpError(400, "Bad photo path.");
-  await requireGold(db);
+  await requirePlus(db);
   await takeQuota(user.id, "photo");
 
   const { data: blob, error } = await db.storage.from("meal-photos").download(path);

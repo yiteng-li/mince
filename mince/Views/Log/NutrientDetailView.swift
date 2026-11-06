@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Tapping a nutrient row: amount vs target, which logged foods supplied it, and (Gold) the best foods for it.
+/// Tapping a nutrient row: amount vs target, which logged foods supplied it, and (mince+) the best foods for it.
 struct NutrientDetailView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
@@ -30,7 +30,7 @@ struct NutrientDetailView: View {
                     }
                 }
                 Section {
-                    if app.isGold {
+                    if app.hasPlus {
                         Picker("Rank by", selection: $perKcal) {
                             Text("Per 100 kcal").tag(true)
                             Text("Per 100 g").tag(false)
@@ -41,7 +41,7 @@ struct NutrientDetailView: View {
                             LabeledContent(f.name, value: Units.amount(amount, unit: nutrient.unit))
                         }
                     } else {
-                        GoldRow(action: {}) { Label("See the richest foods in \(nutrient.name.lowercased())", systemImage: "sparkle.magnifyingglass") }
+                        PlusRow(action: {}) { Label("See the richest foods in \(nutrient.name.lowercased())", systemImage: "sparkle.magnifyingglass") }
                     }
                 } header: { Text("Best sources") }
             }
@@ -54,14 +54,14 @@ struct NutrientDetailView: View {
                 loading = false
             }
             .task(id: perKcal) {
-                guard app.isGold else { return }
+                guard app.hasPlus else { return }
                 do { oracle = try await FoodService().oracle(nutrient: nutrient.key, perKcal: perKcal) } catch { app.report(error) }
             }
         }
     }
 }
 
-/// S29 (Gold): make a diary food repeat on chosen weekdays.
+/// S29 (mince+): make a diary food repeat on chosen weekdays.
 struct RepeatRuleEditor: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
@@ -99,7 +99,7 @@ struct RepeatRuleEditor: View {
                             let rule = RepeatRule(userId: uid, foodId: entry.foodId, servingId: entry.servingId, servingQty: entry.servingQty,
                                                   amountG: entry.amountG, groupId: entry.groupId, weekdays: weekdays.sorted(),
                                                   startsOn: entry.day.adding(days: 1), endsOn: hasEnd ? Day(endDate) : nil)
-                            do { try await GoldService().save(rule); dismiss() } catch { app.report(error) }
+                            do { try await PlusService().save(rule); dismiss() } catch { app.report(error) }
                         }
                     }
                 }

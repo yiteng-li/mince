@@ -44,33 +44,33 @@ Delete account + all data,settings,must,yes,yes,delete-account Edge Function
 Bulk delete diary by date range,settings,could,yes,yes,
 Home screen widgets (energy streak water),platform,could,yes,no,needs a WidgetKit extension target (add in Xcode)
 Apple Watch app,platform,could,yes,no,needs a watchOS target
-Gold subscription monthly/annual with restore,gold,must,yes,yes,StoreKit 2 + server verification via App Store Server API; needs App Store Connect products
-Gold: unlimited history in reports (any date range),gold,must,yes,yes,
-Gold: Photo Log (AI meal recognition),gold,must,yes,yes,photo-log Edge Function (Claude vision)
-Gold: Voice Log + Siri,gold,should,yes,yes,voice-parse Edge Function + App Intent
-Gold: Recipe Importer (URL or pasted text),gold,must,yes,yes,"recipe-import: JSON-LD first, then page text"
-Gold: Repeat Items (daily weekly specific days),gold,must,yes,yes,
-Gold: Macro Scheduler (per weekday templates),gold,must,yes,yes,
-Gold: Fasting Timer (start stop edit schedule recurring),gold,must,yes,yes,
-Gold: Timestamps on entries + sort by time,gold,must,yes,yes,
-Gold: Custom Biometrics,gold,should,yes,yes,
-Gold: Custom Charts (any nutrient/biometric dual axis pin),gold,should,yes,yes,
-Gold: Nutrition Scores (up to 8),gold,should,yes,yes,own formulas; not theirs
-Gold: Oracle nutrient search (top foods for a nutrient),gold,should,yes,yes,
-Gold: Food Suggestions to hit remaining targets,gold,should,yes,yes,
-Gold: Share custom foods and recipes,gold,could,yes,yes,share token
-Gold: Print / PDF report,gold,should,yes,yes,ImageRenderer/PDFKit
-Gold: CSV data export,gold,should,yes,yes,
-Gold: Crono Coach style AI guidance,gold,could,yes,yes,coach Edge Function
-Gold: diary group subtotals,gold,could,yes,yes,
-Gold: CGM charts (glucose time series),gold,could,yes,partial,glucose imported from Apple Health and charted in Biometric charts; no CGM-specific overlay
+mince+ subscription monthly/annual with restore,plus,must,yes,yes,StoreKit 2 + server verification via App Store Server API; needs App Store Connect products
+mince+: unlimited history in reports (any date range),plus,must,yes,yes,
+mince+: Photo Log (AI meal recognition),plus,must,yes,yes,photo-log Edge Function (Claude vision)
+mince+: Voice Log + Siri,plus,should,yes,yes,voice-parse Edge Function + App Intent
+mince+: Recipe Importer (URL or pasted text),plus,must,yes,yes,"recipe-import: JSON-LD first, then page text"
+mince+: Repeat Items (daily weekly specific days),plus,must,yes,yes,
+mince+: Macro Scheduler (per weekday templates),plus,must,yes,yes,
+mince+: Fasting Timer (start stop edit schedule recurring),plus,must,yes,yes,
+mince+: Timestamps on entries + sort by time,plus,must,yes,yes,
+mince+: Custom Biometrics,plus,should,yes,yes,
+mince+: Custom Charts (any nutrient/biometric dual axis pin),plus,should,yes,yes,
+mince+: Nutrition Scores (up to 8),plus,should,yes,yes,own formulas; not theirs
+mince+: Oracle nutrient search (top foods for a nutrient),plus,should,yes,yes,
+mince+: Food Suggestions to hit remaining targets,plus,should,yes,yes,
+mince+: Share custom foods and recipes,plus,could,yes,yes,share token
+mince+: Print / PDF report,plus,should,yes,yes,ImageRenderer/PDFKit
+mince+: CSV data export,plus,should,yes,yes,
+mince+: Crono Coach style AI guidance,plus,could,yes,yes,coach Edge Function
+mince+: diary group subtotals,plus,could,yes,yes,
+mince+: CGM charts (glucose time series),plus,could,yes,partial,glucose imported from Apple Health and charted in Biometric charts; no CGM-specific overlay
 Customisable plus menu,platform,could,yes,yes,
 Adjustable font size,platform,could,yes,yes,Dynamic Type covers it
 Localisation (FR DE PT-BR),platform,could,yes,no,English only; strings ready for a String Catalog
 Cronometer licensed food database (NCCDB + lab data),data,skip,yes,skip,licensed; use USDA FDC + Open Food Facts
 Cronometer nutrition score formulas and branding,data,skip,yes,skip,their IP; write our own
 Ads in Basic tier,monetisation,skip,yes,skip,no reason to show ads
-Partner perks (WHOOP Oura discounts),gold,skip,yes,skip,partner deals
+Partner perks (WHOOP Oura discounts),plus,skip,yes,skip,partner deals
 Instacart ingredient ordering,integrations,skip,yes,skip,partner deal
 Garmin WHOOP Oura Dexcom Polar Withings Suunto direct sync,integrations,skip,yes,skip,partner programmes; Apple Health covers iOS
 Cronometer Pro / Enterprise,pro,skip,yes,skip,different product

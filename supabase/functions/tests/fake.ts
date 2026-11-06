@@ -8,7 +8,7 @@ export const SB = "https://proj.supabase.co";
 
 export type Rec = { method: string; url: URL; body: string; headers: Headers };
 export const state = {
-  gold: true,
+  plus: true,
   usageCount: 0 as number | null,
   requests: [] as Rec[],
   claude: (_body: Record<string, unknown>): Record<string, unknown> => message(JSON.stringify({ items: [], suggestions: [] })),
@@ -21,7 +21,7 @@ export const state = {
 };
 
 export function reset() {
-  state.gold = true; state.usageCount = 0; state.requests = []; state.apple.clear(); state.pages.clear();
+  state.plus = true; state.usageCount = 0; state.requests = []; state.apple.clear(); state.pages.clear();
   state.seenEvents.clear(); state.subscriptionOwner = null; state.storageFiles = []; state.totals = [];
   state.claude = () => message(JSON.stringify({ items: [], suggestions: [] }));
 }
@@ -53,7 +53,7 @@ async function route(req: Request): Promise<Response> {
         : res({ code: 401, msg: "invalid JWT" }, 401);
     }
     if (p.startsWith("/auth/v1/admin/users/") && req.method === "DELETE") return res({});
-    if (p === "/rest/v1/rpc/is_gold") return res(state.gold);
+    if (p === "/rest/v1/rpc/has_plus") return res(state.plus);
     if (p === "/rest/v1/rpc/search_foods") {
       const q = JSON.parse(body).q as string;
       return res(q.includes("unknown") ? [] : [{ id: `food-${q.split(" ")[0]}` }]);

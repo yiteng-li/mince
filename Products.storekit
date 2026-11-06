@@ -12,20 +12,20 @@
     {
       "id" : "21500001",
       "localizations" : [ ],
-      "name" : "mince Gold",
+      "name" : "mince+",
       "subscriptions" : [
         {
           "adHocOffers" : [ ], "codeOffers" : [ ], "displayPrice" : "9.99", "familyShareable" : false, "groupNumber" : 1,
           "internalID" : "6500000001", "introductoryOffer" : null,
-          "localizations" : [ { "description" : "All Gold features, billed monthly", "displayName" : "mince Gold Monthly", "locale" : "en_US" } ],
-          "productID" : "mince.gold.monthly", "recurringSubscriptionPeriod" : "P1M", "referenceName" : "Gold Monthly",
+          "localizations" : [ { "description" : "All mince+ features, billed monthly", "displayName" : "mince+ Monthly", "locale" : "en_US" } ],
+          "productID" : "mince.plus.monthly", "recurringSubscriptionPeriod" : "P1M", "referenceName" : "mince+ Monthly",
           "subscriptionGroupID" : "21500001", "type" : "RecurringSubscription"
         },
         {
           "adHocOffers" : [ ], "codeOffers" : [ ], "displayPrice" : "49.99", "familyShareable" : false, "groupNumber" : 1,
           "internalID" : "6500000002", "introductoryOffer" : { "internalID" : "6500000003", "paymentMode" : "free", "subscriptionPeriod" : "P1W" },
-          "localizations" : [ { "description" : "All Gold features, billed yearly", "displayName" : "mince Gold Annual", "locale" : "en_US" } ],
-          "productID" : "mince.gold.annual", "recurringSubscriptionPeriod" : "P1Y", "referenceName" : "Gold Annual",
+          "localizations" : [ { "description" : "All mince+ features, billed yearly", "displayName" : "mince+ Annual", "locale" : "en_US" } ],
+          "productID" : "mince.plus.annual", "recurringSubscriptionPeriod" : "P1Y", "referenceName" : "mince+ Annual",
           "subscriptionGroupID" : "21500001", "type" : "RecurringSubscription"
         }
       ]

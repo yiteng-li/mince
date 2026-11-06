@@ -1,4 +1,4 @@
-// Request plumbing shared by every function: auth, Gold check, daily quota, JSON responses.
+// Request plumbing shared by every function: auth, mince+ check, daily quota, JSON responses.
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 
 export class HttpError extends Error {
@@ -34,10 +34,10 @@ export async function caller(req: Request): Promise<{ user: User; db: SupabaseCl
   return { user: data.user, db };
 }
 
-export async function requireGold(db: SupabaseClient): Promise<void> {
-  const { data, error } = await db.rpc("is_gold");
+export async function requirePlus(db: SupabaseClient): Promise<void> {
+  const { data, error } = await db.rpc("has_plus");
   if (error) throw error;
-  if (data !== true) throw new HttpError(402, "This needs mince Gold.");
+  if (data !== true) throw new HttpError(402, "This needs mince+.");
 }
 
 export const DAILY_LIMITS = { photo: 30, voice: 100, recipe_import: 30, coach: 10 } as const;
@@ -49,7 +49,7 @@ export async function takeQuota(userId: string, kind: keyof typeof DAILY_LIMITS)
   const { data } = await svc.from("ai_usage").select("count").match({ user_id: userId, day, kind }).maybeSingle();
   const count = data?.count ?? 0;
   if (count >= DAILY_LIMITS[kind]) throw new HttpError(429, "You've hit today's limit for this. It resets tomorrow (UTC).");
-  // ponytail: read-then-write can let two simultaneous calls both pass at the limit; an increment RPC fixes that if it matters.
+  // Known limit: read-then-write can let two simultaneous calls both pass at the limit; an increment RPC fixes that if it matters.
   const { error } = await svc.from("ai_usage").upsert({ user_id: userId, day, kind, count: count + 1 });
   if (error) throw error;
 }

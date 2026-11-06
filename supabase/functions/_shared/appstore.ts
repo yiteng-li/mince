@@ -56,11 +56,11 @@ export async function fetchTransaction(transactionId: string): Promise<AppleTran
   throw new HttpError(404, "Apple doesn't know that purchase.");
 }
 
-const GOLD_PRODUCTS = new Set(["mince.gold.monthly", "mince.gold.annual"]);
+const PLUS_PRODUCTS = new Set(["mince.plus.monthly", "mince.plus.annual"]);
 
 /** The subscriptions row for Apple's view of a transaction. Pure, for tests. */
 export function subscriptionRow(t: AppleTransaction, userId: string, bundleId: string, grace = false, now = Date.now()) {
-  if (t.bundleId !== bundleId || !GOLD_PRODUCTS.has(t.productId)) throw new HttpError(400, "Not a mince Gold purchase.");
+  if (t.bundleId !== bundleId || !PLUS_PRODUCTS.has(t.productId)) throw new HttpError(400, "Not a mince+ purchase.");
   const expires = t.expiresDate ?? 0;
   const status = t.revocationDate ? "revoked" : grace ? "grace" : expires > now ? "active" : "expired";
   return {
@@ -75,7 +75,7 @@ export function subscriptionRow(t: AppleTransaction, userId: string, bundleId: s
   };
 }
 
-/** Writes Apple's view of a subscription. Returns whether it currently grants Gold. */
+/** Writes Apple's view of a subscription. Returns whether it currently grants mince+. */
 export async function storeSubscription(t: AppleTransaction, userId: string, grace = false): Promise<boolean> {
   const row = subscriptionRow(t, userId, env("APPSTORE_BUNDLE_ID"), grace);
   const { error } = await admin().from("subscriptions").upsert(row);

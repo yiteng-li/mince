@@ -1,11 +1,11 @@
 import StoreKit
 import SwiftUI
 
-/// S33: mince Gold plans, purchase and restore.
+/// S33: mince+ plans, purchase and restore.
 struct PaywallView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.dismiss) private var dismiss
-    @State private var selected: String = "mince.gold.annual"
+    @State private var selected: String = "mince.plus.annual"
 
     private let perks: [(String, String)] = [
         ("camera", "Log meals from a photo"), ("mic", "Log by voice and Siri"), ("link", "Import recipes from any website"),
@@ -21,7 +21,7 @@ struct PaywallView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Space.lg) {
                     VStack(alignment: .leading, spacing: Theme.Space.xs) {
-                        GoldBadge()
+                        PlusBadge()
                         Text("Get more from every meal you log").font(Theme.Fonts.display)
                     }
                     VStack(alignment: .leading, spacing: Theme.Space.sm) {
@@ -43,21 +43,21 @@ struct PaywallView: View {
 
                     if let e = store.errorMessage, !store.products.isEmpty { Text(e).font(Theme.Fonts.footnote).foregroundStyle(Theme.Colors.danger) }
 
-                    Button(app.isGold ? "You're on Gold" : "Continue") {
+                    Button(app.hasPlus ? "You're on mince+" : "Continue") {
                         guard let product = store.products.first(where: { $0.id == selected }), let uid = app.userId else { return }
                         Task {
                             if await store.purchase(product, userId: uid) {
-                                await app.refreshGold()
+                                await app.refreshPlus()
                                 await app.refreshMacroSchedule()
                                 dismiss()
                             }
                         }
                     }
-                    .buttonStyle(.minced(.gold, loading: store.isPurchasing))
-                    .disabled(store.products.isEmpty || store.isPurchasing || app.isGold)
+                    .buttonStyle(.minced(.plus, loading: store.isPurchasing))
+                    .disabled(store.products.isEmpty || store.isPurchasing || app.hasPlus)
 
                     HStack {
-                        Button("Restore purchases") { Task { await store.restore(); await app.refreshGold() } }
+                        Button("Restore purchases") { Task { await store.restore(); await app.refreshPlus() } }
                         Spacer()
                         Link("Terms", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                         Link("Privacy", destination: AppLinks.privacy)

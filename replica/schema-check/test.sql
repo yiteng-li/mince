@@ -15,8 +15,8 @@ insert into diary_entries (user_id, day, kind, group_id, food_id, amount_g)
   select auth.uid(), '2026-11-05', 'food', (select id from diary_groups where position=0), id, 50 from foods where name='Almonds';
 insert into diary_entries (user_id, day, kind, nutrients) values (auth.uid(),'2026-11-05','quick_add','{"energy":100}');
 select * from nutrient_totals('2026-11-05','2026-11-05') order by 2;
-do $$ begin perform nutrient_totals('2026-10-01','2026-11-05'); raise exception 'gate failed'; exception when sqlstate 'P0001' then if sqlerrm <> 'gold_required' then raise; end if; end $$;
--- timestamps need gold
+do $$ begin perform nutrient_totals('2026-10-01','2026-11-05'); raise exception 'gate failed'; exception when sqlstate 'P0001' then if sqlerrm <> 'plus_required' then raise; end if; end $$;
+-- timestamps need mince+
 do $$ begin insert into diary_entries (user_id, day, kind, note, logged_at) values (auth.uid(),'2026-11-05','note','x',now()); raise exception 'rls failed'; exception when insufficient_privilege then null; end $$;
 -- recipe
 insert into foods (user_id, kind, source, name, recipe_yield_g) values (auth.uid(),'recipe','recipe','Trail mix',null);
@@ -28,7 +28,7 @@ set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
 select count(*) as b_sees_trailmix from foods where name='Trail mix';
 select count(*) as b_sees_a_entries from diary_entries;
 reset role;
-insert into subscriptions values ('t1','00000000-0000-0000-0000-00000000000a','gold.annual','active',now()+interval '1 year','Sandbox');
+insert into subscriptions values ('t1','00000000-0000-0000-0000-00000000000a','mince.plus.annual','active',now()+interval '1 year','Sandbox');
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 select count(*) as long_range_rows from nutrient_totals('2026-10-01','2026-11-05');

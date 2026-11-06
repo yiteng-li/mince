@@ -2,12 +2,12 @@ import Foundation
 import Observation
 import StoreKit
 
-/// StoreKit 2 subscriptions for mince Gold. The device decides what to show;
-/// the server (verify-purchase + App Store notifications) decides what Gold unlocks.
+/// StoreKit 2 subscriptions for mince+. The device decides what to show;
+/// the server (verify-purchase + App Store notifications) decides what mince+ unlocks.
 @MainActor
 @Observable
 final class StoreService {
-    static let productIds = ["mince.gold.monthly", "mince.gold.annual"]
+    static let productIds = ["mince.plus.monthly", "mince.plus.annual"]
 
     private(set) var products: [Product] = []
     private(set) var hasActiveEntitlement = false
@@ -15,7 +15,7 @@ final class StoreService {
     var errorMessage: String?
 
     private var updates: Task<Void, Never>?
-    /// Called with the server's Gold status after a transaction is verified.
+    /// Called with the server's mince+ status after a transaction is verified.
     var onServerStatus: ((Bool) -> Void)?
 
     init() {
@@ -78,8 +78,8 @@ final class StoreService {
     private func handle(_ result: VerificationResult<Transaction>) async {
         guard case .verified(let transaction) = result else { return }
         do {
-            let gold = try await AIService().verifyPurchase(jws: result.jwsRepresentation)
-            onServerStatus?(gold)
+            let plus = try await AIService().verifyPurchase(jws: result.jwsRepresentation)
+            onServerStatus?(plus)
         } catch {
             errorMessage = "Purchase went through, but we couldn't confirm it yet. It will retry next launch."
         }

@@ -1,5 +1,5 @@
-// Voice Log / Siri (Gold): "two eggs and a slice of toast" -> foods with gram amounts.
-import { caller, HttpError, json, requireGold, serve, str, takeQuota } from "../_shared/http.ts";
+// Voice Log / Siri (mince+): "two eggs and a slice of toast" -> foods with gram amounts.
+import { caller, HttpError, json, requirePlus, serve, str, takeQuota } from "../_shared/http.ts";
 import { type Item, itemsSchema, structured } from "../_shared/claude.ts";
 import { matchItems } from "../_shared/match.ts";
 
@@ -7,7 +7,7 @@ export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const text = str(body.text, 2000);
   if (!text) throw new HttpError(400, "Say or type what you ate.");
-  await requireGold(db);
+  await requirePlus(db);
   await takeQuota(user.id, "voice");
 
   const result = await structured<{ items: Item[]; suggestions: Item[] }>({

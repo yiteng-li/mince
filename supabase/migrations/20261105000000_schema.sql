@@ -1,10 +1,10 @@
--- mince target schema: a rebuild of Cronometer (Basic + Gold) on Supabase.
+-- mince target schema: a rebuild of Cronometer (Basic + mince+) on Supabase.
 -- Replaces the starter 0001-0005 migrations (reset approved; no production data).
 -- Storage buckets: 20261105000001_storage.sql. Catalogues: 20261105000002_reference_data.sql.
 --
 -- Conventions
 --   * every user-owned row has user_id -> auth.users on delete cascade (GDPR delete = delete the auth user)
---   * access = Postgres RLS on every table; Gold-only writes check public.is_gold()
+--   * access = Postgres RLS on every table; mince+ only writes check public.has_plus()
 --   * nutrient amounts live in foods.nutrients jsonb, keyed by nutrients.key, PER 100 g
 --   * `day` is the user's local calendar date (client decides); instants are timestamptz (UTC)
 --   * composite FKs (x_id, user_id) -> parent(id, user_id) make cross-user references impossible
@@ -14,7 +14,7 @@ create extension if not exists pg_trgm;
 create or replace function public.set_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
 
--- ───────────────────────────── Gold entitlement ─────────────────────────────
+-- ───────────────────────────── mince+ entitlement ─────────────────────────────
 
 -- One row per App Store subscription (originalTransactionId). Written only by
 -- Edge Functions with the service role (verify-purchase, appstore-notifications).
@@ -36,7 +36,7 @@ create table public.app_store_events (
   received_at timestamptz not null default now()
 );
 
-create or replace function public.is_gold() returns boolean
+create or replace function public.has_plus() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.subscriptions
@@ -140,7 +140,7 @@ create table public.nutrient_targets (
   check (min_amount is null or max_amount is null or max_amount >= min_amount)
 );
 
--- Gold: Macro Scheduler.
+-- mince+: Macro Scheduler.
 create table public.macro_templates (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -180,7 +180,7 @@ create table public.foods (
   nutrients jsonb not null default '{}' check (jsonb_typeof(nutrients) = 'object'),  -- per 100 g
   recipe_yield_g numeric(9, 2) check (recipe_yield_g > 0),                         -- final cooked weight
   instructions text,
-  share_token uuid unique,                     -- Gold: share link
+  share_token uuid unique,                     -- mince+: share link
   archived_at timestamptz,                     -- soft delete (diary rows still reference it)
   search tsvector generated always as (
     to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(brand, ''))
@@ -253,7 +253,7 @@ create table public.exercises (
 );
 create index on public.exercises using gin (name gin_trgm_ops);
 
--- user_id null = built-in (weight, waist, blood pressure, mood, sleep, stool, ...). Custom = Gold.
+-- user_id null = built-in (weight, waist, blood pressure, mood, sleep, stool, ...). Custom = mince+.
 create table public.biometric_types (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id) on delete cascade,
@@ -278,7 +278,7 @@ create table public.diary_groups (
 );
 create index on public.diary_groups (user_id, position);
 
--- Gold: Repeat Items. weekdays 0-6 (0 = Sunday); daily = all seven.
+-- mince+: Repeat Items. weekdays 0-6 (0 = Sunday); daily = all seven.
 create table public.repeat_rules (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -316,7 +316,7 @@ create table public.diary_entries (
   day date not null,
   kind text not null check (kind in ('food', 'quick_add', 'exercise', 'biometric', 'note')),
   group_id uuid,
-  logged_at timestamptz,                        -- Gold timestamps; always set for imported rows
+  logged_at timestamptz,                        -- mince+ timestamps; always set for imported rows
   position int not null default 0,
 
   -- food
@@ -376,7 +376,7 @@ create table public.days (
   primary key (user_id, day)
 );
 
--- Gold: Fasting Timer. At most one open fast per user.
+-- mince+: Fasting Timer. At most one open fast per user.
 create table public.fasts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -398,7 +398,7 @@ create table public.fast_schedules (
 );
 create index on public.fast_schedules (user_id);
 
--- Gold: Custom Charts. series = [{"type":"nutrient"|"biometric","key":"..."}], max 2 (dual axis).
+-- mince+: Custom Charts. series = [{"type":"nutrient"|"biometric","key":"..."}], max 2 (dual axis).
 create table public.custom_charts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -466,15 +466,15 @@ returns setof public.foods language sql stable as $$
   order by r.last_at desc
 $$;
 
--- Per-day per-nutrient intake. Basic users are limited to 7-day ranges (Gold: unlimited).
+-- Per-day per-nutrient intake. Basic users are limited to 7-day ranges (mince+: unlimited).
 -- One aggregation path for diary, reports, charts and scores.
 create or replace function public.nutrient_totals(p_from date, p_to date)
 returns table (day date, nutrient_key text, amount double precision)
 language plpgsql stable as $$
 begin
   if p_to < p_from then raise exception 'p_to before p_from'; end if;
-  if p_to - p_from >= 7 and not public.is_gold() then
-    raise exception 'gold_required' using errcode = 'P0001';
+  if p_to - p_from >= 7 and not public.has_plus() then
+    raise exception 'plus_required' using errcode = 'P0001';
   end if;
   return query
     select x.day, x.key, sum(x.amt)::float8 from (
@@ -496,8 +496,8 @@ create or replace function public.nutrient_sources(p_from date, p_to date, p_key
 returns table (food_id uuid, name text, amount double precision)
 language plpgsql stable as $$
 begin
-  if p_to - p_from >= 7 and not public.is_gold() then
-    raise exception 'gold_required' using errcode = 'P0001';
+  if p_to - p_from >= 7 and not public.has_plus() then
+    raise exception 'plus_required' using errcode = 'P0001';
   end if;
   return query
     select f.id, f.name, sum((f.nutrients ->> p_key)::numeric * e.amount_g / 100)::float8 as amt
@@ -507,12 +507,12 @@ begin
     group by f.id, f.name order by amt desc limit least(lim, 50);
 end $$;
 
--- Gold: Oracle. Foods richest in a nutrient per 100 kcal (or per 100 g).
--- ponytail: sequential scan over foods; add an expression index per hot nutrient if slow.
+-- mince+: Oracle. Foods richest in a nutrient per 100 kcal (or per 100 g).
+-- Known limit: sequential scan over foods; add an expression index per hot nutrient if slow.
 create or replace function public.oracle(p_key text, per text default 'kcal', lim int default 50)
 returns setof public.foods language plpgsql stable as $$
 begin
-  if not public.is_gold() then raise exception 'gold_required' using errcode = 'P0001'; end if;
+  if not public.has_plus() then raise exception 'plus_required' using errcode = 'P0001'; end if;
   return query
     select f.* from public.foods f
     where f.archived_at is null and (f.user_id is null or f.user_id = auth.uid())
@@ -525,7 +525,7 @@ begin
 end $$;
 
 -- Recompute a recipe's per-100 g nutrients from its ingredients. Called after saving a recipe.
--- ponytail: recipes don't auto-update when an ingredient food is edited later; call again on open if needed.
+-- Known limit: recipes don't auto-update when an ingredient food is edited later; call again on open if needed.
 create or replace function public.recompute_recipe(p_recipe uuid) returns void
 language plpgsql as $$
 declare total_g numeric;
@@ -549,13 +549,13 @@ begin
   where id = p_recipe;
 end $$;
 
--- Gold: materialise repeat rules into a day. Idempotent; a deleted repeated
+-- mince+: materialise repeat rules into a day. Idempotent; a deleted repeated
 -- entry stays deleted because repeat_runs remembers the (rule, day).
 create or replace function public.materialize_repeats(p_day date) returns int
 language plpgsql as $$
 declare r record; n int := 0;
 begin
-  if not public.is_gold() then return 0; end if;
+  if not public.has_plus() then return 0; end if;
   for r in
     select rr.* from public.repeat_rules rr
     where rr.user_id = auth.uid()
@@ -578,7 +578,7 @@ begin
   return n;
 end $$;
 
--- Gold: read a shared food/recipe by its token (bypasses RLS for that one row).
+-- mince+: read a shared food/recipe by its token (bypasses RLS for that one row).
 -- Importing = the client inserts a copy with source = 'shared'.
 create or replace function public.get_shared_food(p_token uuid)
 returns table (food jsonb, servings jsonb)
@@ -637,21 +637,21 @@ create policy own_all on public.diary_groups     for all using (user_id = auth.u
 create policy own_all on public.days             for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy own_all on public.snapshots        for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
--- Gold tables: read/delete own always (so data survives a lapse), write needs Gold
+-- mince+ tables: read/delete own always (so data survives a lapse), write needs mince+
 create policy own_read   on public.macro_templates for select using (user_id = auth.uid());
 create policy own_delete on public.macro_templates for delete using (user_id = auth.uid());
-create policy gold_write on public.macro_templates for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.macro_templates for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.macro_templates for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.macro_templates for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
 create policy own_read   on public.macro_schedule for select using (user_id = auth.uid());
 create policy own_delete on public.macro_schedule for delete using (user_id = auth.uid());
-create policy gold_write on public.macro_schedule for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.macro_schedule for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.macro_schedule for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.macro_schedule for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
 create policy own_read   on public.repeat_rules for select using (user_id = auth.uid());
 create policy own_delete on public.repeat_rules for delete using (user_id = auth.uid());
-create policy gold_write on public.repeat_rules for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.repeat_rules for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.repeat_rules for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.repeat_rules for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
 create policy own_all on public.repeat_runs for all
   using (exists (select 1 from public.repeat_rules r where r.id = rule_id and r.user_id = auth.uid()))
@@ -659,30 +659,30 @@ create policy own_all on public.repeat_runs for all
 
 create policy own_read   on public.fasts for select using (user_id = auth.uid());
 create policy own_delete on public.fasts for delete using (user_id = auth.uid());
-create policy gold_write on public.fasts for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.fasts for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.fasts for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.fasts for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
 create policy own_read   on public.fast_schedules for select using (user_id = auth.uid());
 create policy own_delete on public.fast_schedules for delete using (user_id = auth.uid());
-create policy gold_write on public.fast_schedules for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.fast_schedules for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.fast_schedules for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.fast_schedules for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
 create policy own_read   on public.custom_charts for select using (user_id = auth.uid());
 create policy own_delete on public.custom_charts for delete using (user_id = auth.uid());
-create policy gold_write on public.custom_charts for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit  on public.custom_charts for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write on public.custom_charts for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit  on public.custom_charts for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
--- biometric types: built-ins readable by all; custom ones are Gold to create
+-- biometric types: built-ins readable by all; custom ones are mince+ to create
 create policy read_visible on public.biometric_types for select using (user_id is null or user_id = auth.uid());
 create policy own_delete   on public.biometric_types for delete using (user_id = auth.uid());
-create policy gold_write   on public.biometric_types for insert with check (user_id = auth.uid() and public.is_gold());
-create policy gold_edit    on public.biometric_types for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.is_gold());
+create policy plus_write   on public.biometric_types for insert with check (user_id = auth.uid() and public.has_plus());
+create policy plus_edit    on public.biometric_types for update using (user_id = auth.uid()) with check (user_id = auth.uid() and public.has_plus());
 
--- foods: shared database read-only; own foods full access; sharing a food needs Gold
+-- foods: shared database read-only; own foods full access; sharing a food needs mince+
 create policy read_visible on public.foods for select using (user_id is null or user_id = auth.uid());
-create policy own_insert   on public.foods for insert with check (user_id = auth.uid() and (share_token is null or public.is_gold()));
+create policy own_insert   on public.foods for insert with check (user_id = auth.uid() and (share_token is null or public.has_plus()));
 create policy own_update   on public.foods for update using (user_id = auth.uid())
-  with check (user_id = auth.uid() and (share_token is null or public.is_gold()));
+  with check (user_id = auth.uid() and (share_token is null or public.has_plus()));
 create policy own_delete   on public.foods for delete using (user_id = auth.uid());
 
 create policy read_visible on public.food_servings for select
@@ -706,7 +706,7 @@ create policy own_all on public.meal_items for all
     and exists (select 1 from public.foods f where f.id = food_id and (f.user_id is null or f.user_id = auth.uid()))
   );
 
--- diary: own rows; referenced food / biometric type must be visible; timestamps are Gold
+-- diary: own rows; referenced food / biometric type must be visible; timestamps are mince+
 -- (imported Health rows always carry logged_at, so they are exempt)
 create policy own_read   on public.diary_entries for select using (user_id = auth.uid());
 create policy own_delete on public.diary_entries for delete using (user_id = auth.uid());
@@ -714,11 +714,11 @@ create policy own_insert on public.diary_entries for insert with check (
   user_id = auth.uid()
   and (food_id is null or exists (select 1 from public.foods f where f.id = food_id and (f.user_id is null or f.user_id = auth.uid())))
   and (biometric_type_id is null or exists (select 1 from public.biometric_types b where b.id = biometric_type_id and (b.user_id is null or b.user_id = auth.uid())))
-  and (logged_at is null or source = 'health' or public.is_gold())
+  and (logged_at is null or source = 'health' or public.has_plus())
 );
 create policy own_update on public.diary_entries for update using (user_id = auth.uid()) with check (
   user_id = auth.uid()
   and (food_id is null or exists (select 1 from public.foods f where f.id = food_id and (f.user_id is null or f.user_id = auth.uid())))
   and (biometric_type_id is null or exists (select 1 from public.biometric_types b where b.id = biometric_type_id and (b.user_id is null or b.user_id = auth.uid())))
-  and (logged_at is null or source = 'health' or public.is_gold())
+  and (logged_at is null or source = 'health' or public.has_plus())
 );

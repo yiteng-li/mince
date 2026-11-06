@@ -3,7 +3,7 @@
 Automated:
 - `replica/check-all.sh` runs everything that doesn't need a simulator:
   - `logic-check`: targets, units, scores, days
-  - `schema-check`: schema, RLS (second user), RPCs, Gold gates
+  - `schema-check`: schema, RLS (second user), RPCs, mince+ gates
   - `contract-check`: the app's real Swift models encode every payload it writes (18 tables); Postgres stores them under RLS;
     every read shape the app requests (28: embeds and RPCs) decodes back into the models with the SDK's coder settings
   - Edge Functions: `deno check` plus 42 end-to-end tests of the real handlers with the network stubbed (Supabase, Claude, App Store, recipe sites)
@@ -32,7 +32,7 @@ Legend: **A** automated and passing, **S** schema-check, **L** logic-check, **M*
 | F02-E4 | log food | second user can't see or reference my foods/entries | S | pass |
 | F03-H1 | barcode | known code found in database, then Open Food Facts | M (camera) | - |
 | F03-N1 | barcode | unknown code goes to the custom food editor | M | - |
-| F04-H1 | photo | Gold: photo -> items -> log | M (needs ANTHROPIC_API_KEY) | - |
+| F04-H1 | photo | mince+: photo -> items -> log | M (needs ANTHROPIC_API_KEY) | - |
 | F05-H1 | voice / Siri | text -> items -> log | M | - |
 | F06-H1 | review day | groups, entries, energy summary, nutrient tables | A | pass |
 | F06-H2 | review day | tap nutrient -> sources from today's foods | A | pass |
@@ -48,9 +48,9 @@ Legend: **A** automated and passing, **S** schema-check, **L** logic-check, **M*
 | F07-H6 | share | shared-food RPC decodes; import gets fresh serving ids | contract-check + code | pass |
 | F08-N2 | import recipe | private / IP-literal URLs rejected, also after redirects | function tests | pass |
 | F08-H2 | import recipe | JSON-LD (incl. @graph, HowToSection) parsed; page prose not sent; unmatched lines kept | function tests | pass |
-| F04-H2 | photo | Gold + quota enforced; image sent; items and extras matched; photo deleted even on failure | function tests | pass |
+| F04-H2 | photo | mince+ + quota enforced; image sent; items and extras matched; photo deleted even on failure | function tests | pass |
 | F05-H2 | voice | refusal 422, truncated 422, malformed 502; grams clamped; text capped | function tests | pass |
-| F12-H3 | purchase | Apple re-fetch, someone else's purchase 403, expired/refunded no Gold, sandbox fallback, Xcode only with dev flag, token signature | function tests | pass |
+| F12-H3 | purchase | Apple re-fetch, someone else's purchase 403, expired/refunded no mince+, sandbox fallback, Xcode only with dev flag, token signature | function tests | pass |
 | F12-H4 | renewals | dedupe, grace period, owner fallback, retry after Apple outage | function tests | pass |
 | F16-H2 | delete account | storage emptied, then auth user deleted with the service key | function tests | pass |
 | F02-H5 | diary | edit an entry's amount | A | pass |
@@ -60,7 +60,7 @@ Legend: **A** automated and passing, **S** schema-check, **L** logic-check, **M*
 | F06-H3 | diary | mark day complete | A | pass |
 | F09-H3 | water / note / weight | each adds to the diary; water shows in mL | A | pass |
 | F10-H2 | fasting | end and start a fast | A | pass |
-| F11-H2 | trends (Gold) | 30-day range; create a custom chart | A | pass |
+| F11-H2 | trends (mince+) | 30-day range; create a custom chart | A | pass |
 | F13-H2 | targets | Macro Scheduler template; nutrient override shown as custom | A | pass |
 | F14-H2 | repeat items | repeat from the diary, listed in Repeat items | A | pass |
 | F16-H3 | data | bulk delete clears the diary | A | pass |
@@ -72,9 +72,9 @@ Legend: **A** automated and passing, **S** schema-check, **L** logic-check, **M*
 | F10-E1 | fasting | can't open two fasts at once | S | pass |
 | F11-N1 | trends | Basic: longer range opens paywall (client) | A | pass |
 | F11-N2 | trends | Basic: server refuses ranges > 7 days | S | pass |
-| F12-N1 | Gold | Basic: Photo opens paywall | A | pass |
-| F12-H1 | Gold | Gold: Photo log opens | A | pass |
-| F12-H2 | Gold | purchase with StoreKit test config, server records it | M (Xcode run + ALLOW_XCODE_STOREKIT) | - |
+| F12-N1 | mince+ | Basic: Photo opens paywall | A | pass |
+| F12-H1 | mince+ | mince+: Photo log opens | A | pass |
+| F12-H2 | mince+ | purchase with StoreKit test config, server records it | M (Xcode run + ALLOW_XCODE_STOREKIT) | - |
 | F13-E1 | targets | macro % must total 100 | A | pass |
 | F13-H1 | targets | Mifflin / Katch / keto / Macro Scheduler templates | L | pass |
 | F14-H1 | repeat items | materialised once; deleted day stays deleted | S | pass |

@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 OUT="${TMPDIR:-/tmp}/mince-contract"
 mkdir -p "$OUT"
 M=../../mince/Models; U=../../mince/Utilities
-xcrun swiftc -o "$OUT/harness" main.swift $M/Day.swift $M/Nutrition.swift $M/Profile.swift $M/Food.swift $M/Diary.swift $M/Gold.swift
+xcrun swiftc -o "$OUT/harness" main.swift $M/Day.swift $M/Nutrition.swift $M/Profile.swift $M/Food.swift $M/Diary.swift $M/PlusFeatures.swift
 "$OUT/harness" encode > "$OUT/payloads.json"
 node check.mjs "$OUT/payloads.json" "$OUT/rows.json"
 "$OUT/harness" decode "$OUT/rows.json"

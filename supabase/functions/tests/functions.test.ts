@@ -39,15 +39,15 @@ test("wrapper: array and invalid JSON bodies are treated as {}", async () => {
   assertEquals(seen, {});
 });
 
-// ───────── auth, Gold, quota (shared by every AI function)
+// ───────── auth, mince+, quota (shared by every AI function)
 
 test("auth: a bad token is 401 and nothing else runs", async () => {
   const r = await call(voice, { text: "eggs" }, "bad-token");
   assertEquals(r.status, 401);
   assertEquals(claudeCalls().length, 0);
 });
-test("gold: Basic users get 402 before any quota or AI call", async () => {
-  state.gold = false;
+test("plus: Basic users get 402 before any quota or AI call", async () => {
+  state.plus = false;
   assertEquals((await call(voice, { text: "two eggs" })).status, 402);
   assertEquals(claudeCalls().length, 0);
   assertEquals(sb("/rest/v1/ai_usage").length, 0);
@@ -228,7 +228,7 @@ test("coach: averages over logged days, sends numbers only, returns at most 5 ti
 
 type Tx = Parameters<typeof subscriptionRow>[0];
 const tx = (over: Record<string, unknown> = {}): Tx => ({
-  transactionId: "2000000001", originalTransactionId: "2000000000", productId: "mince.gold.annual", bundleId: "yell0.mince",
+  transactionId: "2000000001", originalTransactionId: "2000000000", productId: "mince.plus.annual", bundleId: "yell0.mince",
   appAccountToken: UID, expiresDate: Date.now() + 30 * 86_400_000, environment: "Production", ...over,
 } as Tx);
 const upserts = () => sb("/rest/v1/subscriptions", "POST").map((r) => JSON.parse(r.body));
@@ -263,17 +263,17 @@ test("verify: missing or malformed transaction is 400", async () => {
 });
 test("verify: re-fetches from Apple and stores what Apple says, not what the device sent", async () => {
   state.apple.set("api.storekit.itunes.apple.com:2000000001", tx());
-  const claimed = jws(tx({ expiresDate: Date.now() + 10 * 365 * 86_400_000, productId: "mince.gold.monthly" }));
+  const claimed = jws(tx({ expiresDate: Date.now() + 10 * 365 * 86_400_000, productId: "mince.plus.monthly" }));
   const { status, body } = await json(await call(verify, { jws: claimed }));
-  assertEquals([status, body.gold], [200, true]);
+  assertEquals([status, body.plus], [200, true]);
   const [row] = upserts();
-  assertEquals([row.user_id, row.product_id, row.status, row.environment], [UID, "mince.gold.annual", "active", "Production"]);
+  assertEquals([row.user_id, row.product_id, row.status, row.environment], [UID, "mince.plus.annual", "active", "Production"]);
   const appleCall = state.requests.find((r) => r.url.host === "api.storekit.itunes.apple.com")!;
   assertMatch(appleCall.headers.get("authorization") ?? "", /^Bearer ey/);
 });
 test("verify: falls back to the sandbox API", async () => {
   state.apple.set("api.storekit-sandbox.itunes.apple.com:2000000001", tx({ environment: "Sandbox" }));
-  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.gold, true);
+  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.plus, true);
   assertEquals(upserts()[0].environment, "Sandbox");
 });
 test("verify: someone else's purchase is 403 and not stored", async () => {
@@ -281,11 +281,11 @@ test("verify: someone else's purchase is 403 and not stored", async () => {
   assertEquals((await call(verify, { jws: jws(tx()) })).status, 403);
   assertEquals(upserts().length, 0);
 });
-test("verify: expired and refunded purchases don't grant Gold", async () => {
+test("verify: expired and refunded purchases don't grant mince+", async () => {
   state.apple.set("api.storekit.itunes.apple.com:2000000001", tx({ expiresDate: Date.now() - 1000 }));
-  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.gold, false);
+  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.plus, false);
   state.apple.set("api.storekit.itunes.apple.com:2000000001", tx({ revocationDate: Date.now() }));
-  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.gold, false);
+  assertEquals((await json(await call(verify, { jws: jws(tx()) }))).body.plus, false);
 });
 test("verify: unknown to Apple is 404", async () => {
   assertEquals((await call(verify, { jws: jws(tx()) })).status, 404);
@@ -295,7 +295,7 @@ test("verify: Xcode test purchases only when the dev flag is on", async () => {
   assertEquals((await call(verify, { jws: xcode })).status, 400);
   Deno.env.set("ALLOW_XCODE_STOREKIT", "true");
   try {
-    assertEquals((await json(await call(verify, { jws: xcode }))).body.gold, true);
+    assertEquals((await json(await call(verify, { jws: xcode }))).body.plus, true);
     assertEquals((await call(verify, { jws: jws(tx({ environment: "Xcode", appAccountToken: "99999999-9999-9999-9999-999999999999" })) })).status, 403);
     assertEquals(state.requests.filter((r) => r.url.host.includes("storekit")).length, 0, "Xcode purchases never reach Apple");
   } finally { Deno.env.delete("ALLOW_XCODE_STOREKIT"); }
@@ -316,7 +316,7 @@ test("notify: the same notification twice is processed once", async () => {
   assertEquals(second.body.duplicate, true);
   assertEquals(upserts().length, 1);
 });
-test("notify: billing grace period keeps Gold", async () => {
+test("notify: billing grace period keeps mince+", async () => {
   state.apple.set("api.storekit.itunes.apple.com:2000000001", tx({ expiresDate: Date.now() - 1000 }));
   await call(notify, notification({ notificationType: "DID_FAIL_TO_RENEW", subtype: "GRACE_PERIOD" }), "");
   assertEquals(upserts()[0].status, "grace");

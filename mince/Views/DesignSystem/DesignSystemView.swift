@@ -11,9 +11,9 @@ struct DesignSystemView: View {
                     Button("Saving") {}.buttonStyle(.minced(.primary, loading: true))
                     Button("Cancel") {}.buttonStyle(.minced(.secondary))
                     Button("Delete entry") {}.buttonStyle(.minced(.destructive))
-                    Button("Upgrade") {}.buttonStyle(.minced(.gold))
+                    Button("Upgrade") {}.buttonStyle(.minced(.plus))
                     Button("Disabled") {}.buttonStyle(.minced).disabled(true)
-                    GoldBadge()
+                    PlusBadge()
                 }
                 section("Energy") {
                     HStack {

@@ -48,7 +48,7 @@ struct AIService {
             return try await db.functions.invoke(fn, options: FunctionInvokeOptions(body: body))
         } catch let FunctionsError.httpError(code, data) {
             let message = (try? JSONDecoder().decode([String: String].self, from: data))?["error"]
-            if code == 402 { throw AppError.goldRequired }
+            if code == 402 { throw AppError.plusRequired }
             throw AppError.message(message ?? "Something went wrong (\(code)). Try again.")
         }
     }
@@ -78,11 +78,11 @@ struct AIService {
         return r.tips
     }
 
-    /// Sends a StoreKit 2 signed transaction for server verification. Returns the server's Gold status.
+    /// Sends a StoreKit 2 signed transaction for server verification. Returns the server's mince+ status.
     func verifyPurchase(jws: String) async throws -> Bool {
-        struct R: Decodable { var gold: Bool }
+        struct R: Decodable { var plus: Bool }
         let r: R = try await call("verify-purchase", body: ["jws": jws])
-        return r.gold
+        return r.plus
     }
 
     /// Deletes the auth user; every table cascades and the storage folders are emptied.

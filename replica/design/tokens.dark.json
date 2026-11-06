@@ -13,8 +13,8 @@
     "danger": "#ff6b6b",
     "success": "#4ade80",
     "warning": "#f5c542",
-    "gold": "#f2c14e",
-    "on-gold": "#2a1f00",
+    "plus": "#f2c14e",
+    "on-plus": "#2a1f00",
     "energy": "#7b93ff",
     "protein": "#4ade80",
     "carbs": "#60a5fa",
@@ -62,8 +62,8 @@
       "surface"
     ],
     [
-      "on-gold",
-      "gold"
+      "on-plus",
+      "plus"
     ],
     [
       "border-input",

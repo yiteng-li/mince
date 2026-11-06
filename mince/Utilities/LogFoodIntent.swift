@@ -1,7 +1,7 @@
 import AppIntents
 import Foundation
 
-/// "Hey Siri, log food in mince": takes what you ate as text and opens Voice Log to confirm it (Gold).
+/// "Hey Siri, log food in mince": takes what you ate as text and opens Voice Log to confirm it (mince+).
 struct LogFoodIntent: AppIntent {
     static let title: LocalizedStringResource = "Log food"
     static let description = IntentDescription("Describe what you ate; mince finds the foods for you to confirm.")

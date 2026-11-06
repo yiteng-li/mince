@@ -36,7 +36,7 @@ final class minceUITests: XCTestCase {
 
     private func openPlus(_ app: XCUIApplication, pick title: String) {
         app.buttons["Add to diary"].firstMatch.tap()
-        // Gold actions read "Photo, Gold feature" for Basic users.
+        // mince+ actions read "Photo, mince+ feature" for Basic users.
         let action = app.buttons.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", title, title + ",")).firstMatch
         XCTAssertTrue(action.waitForExistence(timeout: 5), "plus menu should list \(title)")
         action.tap()
@@ -63,16 +63,16 @@ final class minceUITests: XCTestCase {
     // MARK: F06 review the day
 
     func testF06_H1_diaryShowsGroupsEntriesAndTotals() {
-        let app = launch("-gold", "-tab", "diary")
+        let app = launch("-plus", "-tab", "diary")
         XCTAssertTrue(app.navigationBars["Diary"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Oats, rolled, dry"].exists)
         XCTAssertTrue(app.staticTexts["Eaten"].exists)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Breakfast'")).firstMatch.exists)   // Gold adds "· 294 kcal"
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Breakfast'")).firstMatch.exists)   // mince+ adds "· 294 kcal"
         XCTAssertTrue(scrollTo(app.staticTexts["Vitamins"], in: app), "nutrient tables should be on the diary")
     }
 
     func testF06_H2_tapNutrientShowsSources() {
-        let app = launch("-gold", "-tab", "diary")
+        let app = launch("-plus", "-tab", "diary")
         let magnesium = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Magnesium'")).firstMatch
         XCTAssertTrue(scrollTo(magnesium, in: app))
         magnesium.tap()
@@ -150,7 +150,7 @@ final class minceUITests: XCTestCase {
         XCTAssertTrue(scrollTo(app.staticTexts["Running, 6 mph (10 min/mile)"], in: app))
     }
 
-    // MARK: F11 / F12 Gold gating
+    // MARK: F11 / F12 mince+ gating
 
     func testF11_N1_basicLongerRangeOpensPaywall() {
         let app = launch("-tab", "trends")
@@ -165,8 +165,8 @@ final class minceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Get more from every meal you log"].waitForExistence(timeout: 5))
     }
 
-    func testF12_H1_goldPhotoLogOpens() {
-        let app = launch("-gold", "-tab", "diary")
+    func testF12_H1_plusPhotoLogOpens() {
+        let app = launch("-plus", "-tab", "diary")
         openPlus(app, pick: "Photo")
         XCTAssertTrue(app.navigationBars["Photo log"].waitForExistence(timeout: 5))
     }
@@ -174,7 +174,7 @@ final class minceUITests: XCTestCase {
     // MARK: F10 fasting
 
     func testF10_H1_openFastShowsTimer() {
-        let app = launch("-gold", "-sheet", "fasting")
+        let app = launch("-plus", "-sheet", "fasting")
         XCTAssertTrue(app.buttons["End fast"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["16 h fast at 20:00"].exists)
     }
@@ -213,7 +213,7 @@ final class minceUITests: XCTestCase {
     // MARK: accessibility
 
     func testA11y_diaryAudit() throws {
-        let app = launch("-gold", "-tab", "diary")
+        let app = launch("-plus", "-tab", "diary")
         XCTAssertTrue(app.navigationBars["Diary"].waitForExistence(timeout: 5))
         app.activate()
         // .dynamicType is checked by screenshot at accessibility-XXXL instead: the audit also inspects the
@@ -394,10 +394,10 @@ final class minceUITests: XCTestCase {
         XCTAssertTrue(scrollTo(app.staticTexts["63.5 kg"], in: app))
     }
 
-    // MARK: F10 / F13 / F14 Gold flows
+    // MARK: F10 / F13 / F14 mince+ flows
 
     func testF10_H2_endAndStartFast() {
-        let app = launch("-gold", "-sheet", "fasting")
+        let app = launch("-plus", "-sheet", "fasting")
         app.buttons["End fast"].tap()
         let start = app.buttons["Start fast"]
         XCTAssertTrue(start.waitForExistence(timeout: 5))
@@ -407,7 +407,7 @@ final class minceUITests: XCTestCase {
     }
 
     func testF14_H1_repeatAnEntry() {
-        let app = launch("-gold", "-tab", "diary")
+        let app = launch("-plus", "-tab", "diary")
         app.staticTexts["Blueberries, raw"].press(forDuration: 1.2)
         app.buttons["Repeat"].tap()
         app.buttons["Save"].tap()
@@ -417,7 +417,7 @@ final class minceUITests: XCTestCase {
     }
 
     func testF13_H2_macroSchedulerTemplate() {
-        let app = launch("-gold", "-tab", "more")
+        let app = launch("-plus", "-tab", "more")
         more(app, open: "Macro Scheduler")
         app.buttons["New template"].tap()
         type("Rest day", into: app.textFields["Name (e.g. Training day)"])
@@ -437,15 +437,15 @@ final class minceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["custom"].waitForExistence(timeout: 5))
     }
 
-    func testF11_H1_goldLongerRange() {
-        let app = launch("-gold", "-tab", "trends")
+    func testF11_H1_plusLongerRange() {
+        let app = launch("-plus", "-tab", "trends")
         app.buttons["30 days"].tap()
         XCTAssertFalse(app.staticTexts["Get more from every meal you log"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'of 30'")).firstMatch.waitForExistence(timeout: 5))
     }
 
     func testF11_H2_customChart() {
-        let app = launch("-gold", "-tab", "trends")
+        let app = launch("-plus", "-tab", "trends")
         let link = button(app, startingWith: "Custom charts")
         XCTAssertTrue(scrollTo(link, in: app))
         link.tap()
@@ -480,7 +480,7 @@ final class minceUITests: XCTestCase {
     // MARK: smoke: every settings screen opens
 
     func testSmoke_everyMoreScreenOpens() {
-        let app = launch("-gold", "-tab", "more")
+        let app = launch("-plus", "-tab", "more")
         let rows = ["Profile & body": "Profile", "Energy & macro targets": "Targets", "Vitamin & mineral targets": "Nutrient targets",
                     "Macro Scheduler": "Macro Scheduler", "Diary groups": "Diary groups", "Repeat items": "Repeat items",
                     "Customise the + menu": "+ menu", "Progress photos": "Progress photos", "Apple Health": "Apple Health",
@@ -497,7 +497,7 @@ final class minceUITests: XCTestCase {
     }
 
     func testSmoke_everyTabLoadsWithoutErrors() {
-        let app = launch("-gold", "-tab", "dashboard")
+        let app = launch("-plus", "-tab", "dashboard")
         for (name, title) in [("Dashboard", "Today"), ("Diary", "Diary"), ("Trends", "Trends"), ("Foods", "Foods"), ("More", "More")] {
             tab(app, name)
             XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 5), name)

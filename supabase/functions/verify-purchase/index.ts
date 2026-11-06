@@ -12,11 +12,11 @@ export default serve(async (req, body) => {
   if (claimed.environment === "Xcode") {
     if (Deno.env.get("ALLOW_XCODE_STOREKIT") !== "true") throw new HttpError(400, "Test purchases aren't accepted here.");
     if (claimed.appAccountToken?.toLowerCase() !== user.id) throw new HttpError(403, "That purchase belongs to another account.");
-    return json({ gold: await storeSubscription(claimed, user.id) });
+    return json({ plus: await storeSubscription(claimed, user.id) });
   }
 
   const t = await fetchTransaction(claimed.transactionId);
   // The app sets appAccountToken = user id on purchase; refuse to attach someone else's purchase to this account.
   if (t.appAccountToken && t.appAccountToken.toLowerCase() !== user.id) throw new HttpError(403, "That purchase belongs to another account.");
-  return json({ gold: await storeSubscription(t, user.id) });
+  return json({ plus: await storeSubscription(t, user.id) });
 });

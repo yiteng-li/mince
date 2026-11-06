@@ -1,6 +1,6 @@
 import Foundation
 
-/// Sample data for screenshots and UI tests: launch a DEBUG build with `-demo` (add `-gold` for Gold,
+/// Sample data for screenshots and UI tests: launch a DEBUG build with `-demo` (add `-plus` for mince+,
 /// `-tab diary|dashboard|trends|foods|more`, `-sheet food|quick|exercise|biometric|paywall`, `-screen design`).
 /// Reads return fixtures; writes are kept in memory. Always off in release builds.
 enum Demo {
@@ -11,7 +11,7 @@ enum Demo {
         false
         #endif
     }
-    static var gold: Bool { active && ProcessInfo.processInfo.arguments.contains("-gold") }
+    static var plus: Bool { active && ProcessInfo.processInfo.arguments.contains("-plus") }
 
     static let userId = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
 

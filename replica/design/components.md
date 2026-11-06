@@ -9,11 +9,11 @@ Shared rules
 - Every tap target >= 44 pt. Every number uses `.monospacedDigit()`.
 - Colour is never the only signal: over/under states also change the icon or label.
 - Respect Dynamic Type up to accessibility sizes (rows wrap, never truncate a number), Reduce Motion (no ring animation), dark mode.
-- Gold-locked controls stay visible with a `GoldBadge` and open the paywall (S33); they are never hidden.
+- mince+ controls stay visible with a `PlusBadge` and open the paywall (S33); they are never hidden.
 
 ```
 PrimaryButton / SecondaryButton / DestructiveButton
-  variants  primary (accent fill), secondary (surface + border), destructive (danger text), gold (gold fill, on-gold text)
+  variants  primary (accent fill), secondary (surface + border), destructive (danger text), plus (plus fill, on-plus text)
   sizes     regular 50pt tall full-width; compact 36pt
   states    default, pressed (opacity .8), disabled (opacity .4, not tappable), loading (spinner replaces icon, label kept for VoiceOver)
   tokens    radius md, type heading, space 16 horizontal
@@ -28,7 +28,7 @@ DateNavigator
   used on   S05, S23
 
 DiaryGroupSection
-  parts     header (group name, optional subtotal kcal [Gold], add button), rows, empty prompt "Add food"
+  parts     header (group name, optional subtotal kcal [mince+], add button), rows, empty prompt "Add food"
   states    empty, filled, collapsed
   tokens    header type label/text-muted, surface card, radius lg
   a11y      header is .isHeader; add button "Add to <group>"
@@ -36,8 +36,8 @@ DiaryGroupSection
 
 DiaryEntryRow
   kinds     food (name, amount + unit, kcal), quick_add, exercise (minutes, -kcal in success), biometric (value + unit), note (2-line text), water
-  states    default, selected (multi-select checkmark), timestamped (time caption, Gold), repeated (arrow.triangle.2.circlepath glyph)
-  gestures  swipe trailing delete -> toast with Undo; swipe leading copy; long-press context menu (edit, copy, move group, repeat [Gold], delete)
+  states    default, selected (multi-select checkmark), timestamped (time caption, mince+), repeated (arrow.triangle.2.circlepath glyph)
+  gestures  swipe trailing delete -> toast with Undo; swipe leading copy; long-press context menu (edit, copy, move group, repeat [mince+], delete)
   tokens    type body + footnote/text-muted, row-min-height 44
   a11y      combined element: "Almonds, 50 grams, 290 calories"; actions exposed as accessibilityActions
   used on   S05
@@ -62,7 +62,7 @@ MacroBar / NutrientBar
   used on   S04, S05, S23
 
 NutrientTargetTable
-  parts     category header (General, Carbohydrates, Lipids, Protein, Vitamins, Minerals, Other), NutrientBar rows; tap row -> nutrient sources + Oracle [Gold]
+  parts     category header (General, Carbohydrates, Lipids, Protein, Vitamins, Minerals, Other), NutrientBar rows; tap row -> nutrient sources + Oracle [mince+]
   states    loading (redacted placeholder rows), filled
   used on   S05, S23
 
@@ -73,7 +73,7 @@ SearchField + FilterChips
   used on   S07, S18, S26
 
 ServingPicker
-  parts     quantity field (decimal keypad), unit menu from food_servings (+ g, oz), live nutrition preview, group picker, time picker [Gold]
+  parts     quantity field (decimal keypad), unit menu from food_servings (+ g, oz), live nutrition preview, group picker, time picker [mince+]
   states    invalid quantity (danger caption, add disabled)
   used on   S08, S20, S21
 
@@ -88,8 +88,8 @@ FormField
   used on   S01-S03, S12-S14, S19, S27
 
 Chart
-  variants  line (weight, biometrics), bar (energy per day), dual-axis (custom charts, Gold)
-  states    empty ("Log a few days to see a trend"), data, range-locked (blurred + GoldBadge beyond 7 days)
+  variants  line (weight, biometrics), bar (energy per day), dual-axis (custom charts, mince+)
+  states    empty ("Log a few days to see a trend"), data, range-locked (blurred + PlusBadge beyond 7 days)
   tokens    Swift Charts, series colours from macro/energy roles
   a11y      .accessibilityChartDescriptor with summary
   used on   S04, S24
@@ -98,11 +98,11 @@ TimerRing (fasting)
   states    idle (Start fast), active (elapsed / target, End fast), complete (success), scheduled (next start time)
   used on   S17, S04
 
-GoldBadge + PaywallSheet
-  badge     "Gold" capsule, gold fill, on-gold text, lock.fill glyph
+PlusBadge + PaywallSheet
+  badge     "mince+" capsule, plus fill, on-plus text, lock.fill glyph
   sheet     plan cards (monthly / annual, annual marked best value), restore purchases, terms + privacy links, close
   states    loading products, purchasing, success, failed, pending (Ask to Buy)
-  used on   every Gold entry point, S33
+  used on   every mince+ entry point, S33
 
 Toast
   parts     message + optional Undo, auto-dismiss 4 s, swipe to dismiss
@@ -110,7 +110,7 @@ Toast
   used on   S05, S18
 
 PlusMenu
-  parts     grid of actions (Food, Barcode, Photo [Gold], Voice [Gold], Quick add, Exercise, Biometric, Water, Note, Fast [Gold])
+  parts     grid of actions (Food, Barcode, Photo [mince+], Voice [mince+], Quick add, Exercise, Biometric, Water, Note, Fast [mince+])
   states    default, edit mode (reorder / hide, saved to profiles.plus_menu)
   used on   S06
 

@@ -255,20 +255,20 @@ extension View {
     func screenBackground() -> some View { scrollContentBackground(.hidden).background(Theme.Colors.bg) }
 }
 
-/// A row with a Gold badge that opens the paywall for Basic users.
-struct GoldRow<Label: View>: View {
+/// A row with a mince+ badge that opens the paywall for Basic users.
+struct PlusRow<Label: View>: View {
     @Environment(AppModel.self) private var app
     var action: () -> Void
     @ViewBuilder var label: () -> Label
 
     var body: some View {
         Button {
-            app.requireGold(action)
+            app.requirePlus(action)
         } label: {
             HStack {
                 label()
                 Spacer()
-                if !app.isGold { GoldBadge() }
+                if !app.hasPlus { PlusBadge() }
             }
         }
     }

@@ -86,7 +86,7 @@ struct PlusMenu: View {
                             VStack(spacing: Theme.Space.xs) {
                                 Image(systemName: action.symbol).font(.title2)
                                 Text(action.title).font(Theme.Fonts.label).multilineTextAlignment(.center)
-                                if action.isGold && !app.isGold { GoldBadge() }
+                                if action.needsPlus && !app.hasPlus { PlusBadge() }
                             }
                             .frame(maxWidth: .infinity, minHeight: 96)
                             .background(Theme.Colors.surface, in: RoundedRectangle(cornerRadius: Theme.Radius.lg))

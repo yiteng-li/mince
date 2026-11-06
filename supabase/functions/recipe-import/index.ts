@@ -1,5 +1,5 @@
-// Recipe Importer (Gold): a URL (schema.org Recipe JSON-LD, else page text) or pasted text -> recipe draft with matched ingredients.
-import { caller, HttpError, json, requireGold, serve, str, takeQuota } from "../_shared/http.ts";
+// Recipe Importer (mince+): a URL (schema.org Recipe JSON-LD, else page text) or pasted text -> recipe draft with matched ingredients.
+import { caller, HttpError, json, requirePlus, serve, str, takeQuota } from "../_shared/http.ts";
 import { structured } from "../_shared/claude.ts";
 import { matchFood } from "../_shared/match.ts";
 import { fetchPage, findRecipe, recipeText, safeURL, visibleText } from "../_shared/recipe.ts";
@@ -11,7 +11,7 @@ export default serve(async (req, body) => {
   const url = str(body.url, 2000);
   const pasted = str(body.text, 40_000);
   if (!url && !pasted) throw new HttpError(400, "Add a link or paste a recipe.");
-  await requireGold(db);
+  await requirePlus(db);
   await takeQuota(user.id, "recipe_import");
 
   let source = pasted ?? "";

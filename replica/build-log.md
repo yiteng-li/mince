@@ -10,14 +10,14 @@ Screens are verified against fixture data; the live Supabase path compiles but h
 | S01/S02 | 2026-11-05 | done | email + password, Apple, reset | Apple needs the Supabase provider configured |
 | S03 | 2026-11-05 | done | 5 steps, guardrail, writes first weight biometric | |
 | S04 | 2026-11-05 | done | ring, macros, streak, water, fast, scores, weight trend, pinned charts, coach | |
-| S05 | 2026-11-05 | done | groups, subtotals (Gold), energy summary, nutrient tables, swipe/undo, multi-select, copy/paste, copy yesterday, move group, repeat, complete | |
+| S05 | 2026-11-05 | done | groups, subtotals (mince+), energy summary, nutrient tables, swipe/undo, multi-select, copy/paste, copy yesterday, move group, repeat, complete | |
 | S06 | 2026-11-05 | done | order/visibility from profiles.plus_menu | |
-| S07/S08 | 2026-11-05 | done | search (FTS + trigram), recents, filters, meals, branded via Open Food Facts, serving picker, time (Gold) | |
+| S07/S08 | 2026-11-05 | done | search (FTS + trigram), recents, filters, meals, branded via Open Food Facts, serving picker, time (mince+) | |
 | S09 | 2026-11-05 | done | camera + manual code, OFF lookup, unknown -> custom food | |
 | S10/S11 | 2026-11-05 | partial | review UI done; Edge Functions in backend step | |
 | S12-S16 | 2026-11-05 | done | quick add, exercise (MET), biometrics (pair/scale/duration), note, water | |
 | S17 | 2026-11-05 | done | timer, history edit, schedules + local notifications | |
-| S18-S21 | 2026-11-05 | done | custom foods (per-serving entry -> per 100 g), recipes (cooked weight, servings), meals, share (Gold) | serving ids must survive edits or past entries lose their serving name |
+| S18-S21 | 2026-11-05 | done | custom foods (per-serving entry -> per 100 g), recipes (cooked weight, servings), meals, share (mince+) | serving ids must survive edits or past entries lose their serving name |
 | S22 | 2026-11-05 | partial | UI + unmatched-line fixing; Edge Function in backend step | |
 | S23-S26 | 2026-11-05 | done | ranges (7d Basic), energy chart, averages, scores, suggestions, custom + biometric charts, nutrient sources, Oracle | |
 | S27/S28 | 2026-11-05 | done | BMR formulas, activity, goal, macro modes, presets, overrides, Macro Scheduler | |

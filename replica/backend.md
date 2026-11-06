@@ -7,7 +7,7 @@ Everything below is in the repo; the steps marked **you** need your accounts and
 
 | piece | where | verified by |
 | --- | --- | --- |
-| Schema, RLS, RPCs (25 tables) | `supabase/migrations/20261105000000_schema.sql` | `replica/schema-check` (`npm i && npm test`): second user sees nothing, Gold gates, repeats, recipes, totals |
+| Schema, RLS, RPCs (25 tables) | `supabase/migrations/20261105000000_schema.sql` | `replica/schema-check` (`npm i && npm test`): second user sees nothing, mince+ gates, repeats, recipes, totals |
 | Storage buckets + owner-only policies | `supabase/migrations/20261105000001_storage.sql` | Supabase-specific (not runnable in PGlite); review before push |
 | Reference data: 84 nutrients, DRI defaults, 85 exercises, 34 biometrics | `supabase/migrations/20261105000002_reference_data.sql` | loaded by schema-check |
 | USDA food import (SR Legacy + Foundation) | `supabase/seed/usda_import.py` | fixture zip -> SQL -> loaded twice (idempotent) -> `search_foods` finds it |
@@ -22,8 +22,8 @@ Per-user daily limits in `ai_usage`: 30 photos, 100 voice, 30 imports, 10 coach.
 
 Subscriptions: the device sends its StoreKit JWS; the server takes only the transaction id from it and re-fetches the transaction from
 Apple's App Store Server API with your key, checks bundle id, product and `appAccountToken` (= user id), then writes `subscriptions`.
-Notifications are handled the same way (re-fetched, deduped on `notificationUUID`, retried by Apple on failure). `is_gold()` reads that table;
-RLS, the RPCs and every Edge Function call it, so a modified app can't unlock Gold.
+Notifications are handled the same way (re-fetched, deduped on `notificationUUID`, retried by Apple on failure). `has_plus()` reads that table;
+RLS, the RPCs and every Edge Function call it, so a modified app can't unlock mince+.
 
 ## Deploy (you)
 
@@ -42,7 +42,7 @@ supabase functions deploy appstore-notifications --no-verify-jwt
 
 Then:
 - **Auth > Providers > Apple**: enable, client id = `yell0.mince`. **Auth > SMTP**: use Resend or Postmark from your own domain before launch (Supabase's built-in sender is rate-limited).
-- **App Store Connect**: create the subscription group and products `mince.gold.monthly`, `mince.gold.annual`; create an In-App Purchase key (issuer id, key id, .p8);
+- **App Store Connect**: create the subscription group and products `mince.plus.monthly`, `mince.plus.annual`; create an In-App Purchase key (issuer id, key id, .p8);
   set the Server Notifications V2 URL (production and sandbox) to `https://yobeigyeotsifsvxlpwz.supabase.co/functions/v1/appstore-notifications`.
 - **Xcode**: Signing & Capabilities: HealthKit, Sign in with Apple (the entitlements file already lists them). Raise or lower `IPHONEOS_DEPLOYMENT_TARGET` (26.5) to match the devices you test on.
 - **Backups**: Supabase daily backups are on for paid plans; Point-in-Time Recovery is an add-on. Check Project Settings > Database.
@@ -61,8 +61,8 @@ Then:
 
 - [x] secrets only in env vars (`supabase/functions/.env`, gitignored); the app ships only the anon key, which RLS is built around
 - [x] input validated on the server: every function bounds its strings, checks storage paths belong to the caller, rejects non-public URLs (and re-checks after redirects), caps page and photo size
-- [x] authorisation on every read and write: RLS on all 25 tables, Gold checks in RLS/RPCs/functions; tested with a second user in schema-check
-- [x] rate limits: Supabase Auth's built-in limits on sign up / sign in / email; daily per-user quotas on AI functions. ponytail: the quota check is read-then-write, so two simultaneous calls can both pass at the limit
+- [x] authorisation on every read and write: RLS on all 25 tables, mince+ checks in RLS/RPCs/functions; tested with a second user in schema-check
+- [x] rate limits: Supabase Auth's built-in limits on sign up / sign in / email; daily per-user quotas on AI functions. Known limit: the quota check is read-then-write, so two simultaneous calls can both pass at the limit
 - [x] webhooks verified: App Store notifications are re-fetched from Apple before anything is written; event ids deduped
 - [x] uploads: private buckets, 5 MB and image-type limits, per-user folders, meal photos deleted after analysis
 - [x] no user data in logs: functions log error messages only, never bodies

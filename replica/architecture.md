@@ -20,7 +20,7 @@ Reads: `recon.md`, `features.csv`. Schema: `schema.sql` (verified by `schema-che
 
 ## Schema
 
-Tables: **25**. Access rules: **Postgres RLS on every table**; Gold-only writes check `public.is_gold()`; service-role-only writes for `subscriptions`, `app_store_events`, `ai_usage`.
+Tables: **25**. Access rules: **Postgres RLS on every table**; mince+ only writes check `public.has_plus()`; service-role-only writes for `subscriptions`, `app_store_events`, `ai_usage`.
 
 Key decisions (each changes the current 0001-0005 schema):
 
@@ -28,12 +28,12 @@ Key decisions (each changes the current 0001-0005 schema):
 - **One `diary_entries` table for food, quick-add, exercise, biometric and note rows**, discriminated by `kind` with a per-kind check constraint. A day is one query; copy/paste, multi-select, groups and timestamps work for every kind. `weight_logs` folds in as the `weight` biometric.
 - **Diary groups are rows** (`diary_groups`, 4 created per user), replacing the fixed `meal_type` check. Renamable, reorderable.
 - **Amounts stored as grams** (`amount_g`) plus `serving_id`/`serving_qty` to redisplay what the user picked. `food_servings` holds "1 cup = 240 g".
-- **Custom foods are private** (`user_id` set, `on delete cascade`). The current `created_by ... on delete set null` would turn a deleted user's foods into public foods. Shared database foods are `user_id is null` and written only by the seed script. Sharing (Gold) is a token plus copy-on-import.
+- **Custom foods are private** (`user_id` set, `on delete cascade`). The current `created_by ... on delete set null` would turn a deleted user's foods into public foods. Shared database foods are `user_id is null` and written only by the seed script. Sharing (mince+) is a token plus copy-on-import.
 - **Foods are soft-deleted** (`archived_at`) because diary rows reference them (`on delete restrict`).
 - **Recipes are foods** (`kind = 'recipe'`) with `recipe_ingredients`; their nutrients are cached by `recompute_recipe()` on save, so search, totals and Oracle treat them like any food. **Meals** (`meals` + `meal_items`) always explode into separate entries when logged.
 - **Profile holds targets and prefs** (1:1, one fetch). Current weight is the latest `weight` biometric, not a profile column. `goal` (cut/maintain/bulk) becomes `goal_kg_per_week`.
 - **Micronutrient targets** = DRI defaults (`nutrient_dri`, by sex + age band) overridden by `nutrient_targets`.
-- **Gold data stays readable after a lapse**: Gold tables allow select/delete for the owner always, insert/update only while Gold.
+- **mince+ data stays readable after a lapse**: mince+ tables allow select/delete for the owner always, insert/update only while mince+.
 - **Composite FKs** `(group_id, user_id) -> diary_groups(id, user_id)` make it impossible to file an entry under someone else's group, without a policy.
 
 Hard constraints the recon found, enforced in the database:
@@ -46,8 +46,8 @@ Hard constraints the recon found, enforced in the database:
 | macro % sums to 100 | check on `profiles` |
 | max 8 nutrition scores | `cardinality(selected_scores) <= 8` |
 | one default serving per food | partial unique index |
-| Basic reports limited to 7 days | `nutrient_totals` / `nutrient_sources` raise `gold_required` |
-| timestamps are Gold | RLS on `diary_entries.logged_at` (Health imports exempt) |
+| Basic reports limited to 7 days | `nutrient_totals` / `nutrient_sources` raise `plus_required` |
+| timestamps are mince+ | RLS on `diary_entries.logged_at` (Health imports exempt) |
 
 ## API
 
@@ -61,8 +61,8 @@ Most reads/writes go straight to PostgREST through `supabase-swift` with RLS doi
 | GET `/nutrients`, `/nutrient_dri` | catalogue + defaults (cache on device) | user | — | rows | F06 |
 | GET/PUT/DELETE `/nutrient_targets` | custom min/max | owner | key, min, max | rows | F13 |
 | GET `/diary_entries?day=eq.D&select=*,food:foods(id,name,nutrients),serving:food_servings(name)` | a day | owner | day | entries | F02, F06 |
-| POST `/rpc/materialize_repeats` | add today's repeat items (call before the day fetch) | owner (no-op unless Gold) | day | count | F14 |
-| POST `/rpc/nutrient_totals` | per-day per-nutrient sums | owner; >7 days Gold | from, to | rows | F06, F11 |
+| POST `/rpc/materialize_repeats` | add today's repeat items (call before the day fetch) | owner (no-op unless mince+) | day | count | F14 |
+| POST `/rpc/nutrient_totals` | per-day per-nutrient sums | owner; >7 days mince+ | from, to | rows | F06, F11 |
 | POST/PATCH/DELETE `/diary_entries` | log, edit, move group, copy (insert copies), multi-delete (`id=in.(...)`), bulk delete (`day=gte..lte`) | owner | entry | entry | F02-F05, F09, F16 |
 | GET/POST/PATCH/DELETE `/diary_groups` | rename / reorder groups | owner | name, position | rows | F02 |
 | PUT `/days` | mark day complete | owner | day, completed | row | F06 |
@@ -74,27 +74,27 @@ Most reads/writes go straight to PostgREST through `supabase-swift` with RLS doi
 | POST `/foods` (kind recipe), `/recipe_ingredients`, then `/rpc/recompute_recipe` | recipe | owner | recipe + ingredients | recipe | F07 |
 | POST `/meals`, `/meal_items` | meal | owner | items | meal | F07 |
 | GET `/exercises?name=ilike.*q*` | exercise search | user | q | rows | F09 |
-| GET `/biometric_types` · POST (custom, Gold) | metric list / custom metric | user / Gold | name, unit | rows | F09 |
+| GET `/biometric_types` · POST (custom, mince+) | metric list / custom metric | user / mince+ | name, unit | rows | F09 |
 | GET `/diary_entries?kind=eq.biometric&biometric_type_id=eq.T&day=gte.A` | weight / biometric chart | owner | type, range | rows | F11 |
-| POST `/rpc/nutrient_sources` | top contributing foods in my diary | owner; >7 days Gold | from, to, key | rows | F06, F11 |
-| POST `/rpc/oracle` | top foods for a nutrient | Gold | key, per | foods | F06 |
-| CRUD `/macro_templates`, `/macro_schedule` | Macro Scheduler | Gold write | template, weekday | rows | F13 |
-| CRUD `/repeat_rules` | Repeat Items | Gold write | food/meal, weekdays | rule | F14 |
-| CRUD `/fasts`, `/fast_schedules` | fasting timer | Gold write | start/end | rows | F10 |
-| CRUD `/custom_charts` | custom charts | Gold write | series, range | rows | F11 |
-| PATCH `/foods` `{share_token}` · POST `/rpc/get_shared_food` | share / open a shared food | Gold / any user with token | token | food + servings | F07 |
+| POST `/rpc/nutrient_sources` | top contributing foods in my diary | owner; >7 days mince+ | from, to, key | rows | F06, F11 |
+| POST `/rpc/oracle` | top foods for a nutrient | mince+ | key, per | foods | F06 |
+| CRUD `/macro_templates`, `/macro_schedule` | Macro Scheduler | mince+ write | template, weekday | rows | F13 |
+| CRUD `/repeat_rules` | Repeat Items | mince+ write | food/meal, weekdays | rule | F14 |
+| CRUD `/fasts`, `/fast_schedules` | fasting timer | mince+ write | start/end | rows | F10 |
+| CRUD `/custom_charts` | custom charts | mince+ write | series, range | rows | F11 |
+| PATCH `/foods` `{share_token}` · POST `/rpc/get_shared_food` | share / open a shared food | mince+ / any user with token | token | food + servings | F07 |
 | Storage `snapshots/<uid>/…` + CRUD `/snapshots` | progress photos | owner | image | row | F09 |
 | POST `fn/verify-purchase` | verify a StoreKit 2 signed transaction, upsert `subscriptions` | user | JWS transaction | entitlement | F12 |
 | POST `fn/appstore-notifications` | renewals, expiry, refund, revoke | Apple (JWS-verified) | signedPayload | 200 | F12 |
-| POST `fn/photo-log` | image -> items with grams, matched to foods | Gold, quota | storage path | items[] | F04 |
-| POST `fn/voice-parse` | transcript -> items with grams | Gold, quota | text | items[] | F05 |
-| POST `fn/recipe-import` | URL or pasted text -> ingredient lines -> matched foods | Gold, quota | url or text | draft recipe | F08 |
-| POST `fn/coach` | short guidance from the user's own 7-30 day aggregates | Gold, quota | range | text | F13 (Crono Coach) |
+| POST `fn/photo-log` | image -> items with grams, matched to foods | mince+, quota | storage path | items[] | F04 |
+| POST `fn/voice-parse` | transcript -> items with grams | mince+, quota | text | items[] | F05 |
+| POST `fn/recipe-import` | URL or pasted text -> ingredient lines -> matched foods | mince+, quota | url or text | draft recipe | F08 |
+| POST `fn/coach` | short guidance from the user's own 7-30 day aggregates | mince+, quota | range | text | F13 (Crono Coach) |
 | POST `fn/delete-account` | `auth.admin.deleteUser` (cascades everything) + storage cleanup | owner | — | 204 | F16 |
 | client only | PDF report (`ImageRenderer`), CSV export, HealthKit read/write, local fast notifications, widgets, Siri App Intents | — | — | — | F15, F16 |
 
 Webhooks in: App Store Server Notifications V2 -> `appstore-notifications`. Webhooks out: none.
-Jobs: none. (Optional later: a nightly `expire_stale_subscriptions` pg_cron if notifications are missed; `is_gold()` already checks `expires_at`.)
+Jobs: none. (Optional later: a nightly `expire_stale_subscriptions` pg_cron if notifications are missed; `has_plus()` already checks `expires_at`.)
 
 Route count: 37 rows above (30 PostgREST/RPC/storage, 7 Edge Functions).
 
@@ -103,7 +103,7 @@ Route count: 37 rows above (30 PostgREST/RPC/storage, 7 Edge Functions).
 - **Time zones / DST:** `day` is the device's local date, chosen by the client, never derived from `now()` on the server. Instants (`logged_at`, fasts) are `timestamptz`. A fast belongs to the day it started. Changing time zone mid-trip doesn't move past days.
 - **Idempotency:** App Store notifications deduped on `notificationUUID` (`app_store_events`); `subscriptions` keyed by `original_transaction_id` so verify-purchase + webhook can both upsert. Health imports keyed by sample UUID. Repeats keyed by `(rule, day)`.
 - **Races:** two devices materialising repeats -> `repeat_runs` PK makes the second a no-op. Starting a fast twice -> partial unique index.
-- **Entitlement trust:** client-side Gold checks are UI only. The server checks `is_gold()` in RLS, RPCs and every Edge Function. Set `appAccountToken = user id` on purchase so transactions map to users.
+- **Entitlement trust:** client-side mince+ checks are UI only. The server checks `has_plus()` in RLS, RPCs and every Edge Function. Set `appAccountToken = user id` on purchase so transactions map to users.
 - **Double-counted energy:** with Health active energy on, replace the activity multiplier instead of adding to it (`use_health_active_energy`); skip Health workouts that duplicate manual ones.
 - **Rate limits / cost:** AI functions check `ai_usage` (e.g. 30 photos/day) before calling the model; images resized on device (<1 MB) before upload.
 - **File sizes:** buckets capped at 5 MB, image MIME types only.
@@ -122,7 +122,7 @@ Route count: 37 rows above (30 PostgREST/RPC/storage, 7 Edge Functions).
 1. **Vertical slice** — sign up, set a minimal profile, search a seeded food, log it to a group, see energy + macros + micros vs DRI targets.
    Screens S01, S02, S05, S07, S08. Tables profiles, nutrients, nutrient_dri, foods, food_servings, diary_groups, diary_entries. Routes auth, search_foods, diary_entries CRUD, nutrient_totals. Plus the USDA seed script (Foundation + SR Legacy, ~8k foods).
 2. **Must-haves (Basic)** — onboarding wizard + energy/macro targets (S03, S27); custom foods, recipes, meals (S18-S21); barcode (S09); quick add (S12); exercise (S13) + weight (S14); edit/undo; weight + energy charts and 7-day report (S23, S24); units; delete account.
-3. **Gold infrastructure** — subscriptions, verify-purchase, appstore-notifications, paywall (S33), `is_gold()` gating. Then Gold musts: unlimited ranges, timestamps, Repeat Items (S29), Macro Scheduler (S28), Fasting Timer (S17), Recipe Importer (S22), Photo Log (S10).
+3. **mince+ infrastructure** — subscriptions, verify-purchase, appstore-notifications, paywall (S33), `has_plus()` gating. Then mince+ musts: unlimited ranges, timestamps, Repeat Items (S29), Macro Scheduler (S28), Fasting Timer (S17), Recipe Importer (S22), Photo Log (S10).
 4. **Should-haves** — Sign in with Apple, voice log + Siri (S11), Apple Health (S31), nutrient sources, Oracle + Food Suggestions (S26), Nutrition Scores (S25), Custom Charts, custom biometrics, PDF/CSV (S34), water (S16), notes (S15), streaks, copy/paste, multi-select, diet presets.
 5. **Could-haves** — snapshots (S30), sharing, coach (S35), widgets + Watch (S36), plus-menu customisation, group subtotals, CGM charts, localisation.
 6. **Fixes from replica-entrepreneur** once it runs.

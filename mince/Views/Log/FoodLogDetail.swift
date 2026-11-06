@@ -54,11 +54,11 @@ struct FoodLogDetail: View {
                 Picker("Group", selection: $group) {
                     ForEach(app.groups) { Text($0.name).tag(UUID?.some($0.id)) }
                 }
-                if app.isGold {
+                if app.hasPlus {
                     Toggle("Time", isOn: $useTime)
                     if useTime { DatePicker("At", selection: $time, displayedComponents: .hourAndMinute) }
                 } else {
-                    GoldRow(action: {}) { Text("Time") }
+                    PlusRow(action: {}) { Text("Time") }
                 }
             }
 

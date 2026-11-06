@@ -12,16 +12,16 @@ Planning and status live in `replica/`: `recon.md` (screens, flows), `architectu
 ```
 mince/
   MinceApp.swift        entry point, injects AppModel
-  Models/               Codable types matching the schema (Day, Food, DiaryEntry, Profile, Gold types)
+  Models/               Codable types matching the schema (Day, Food, DiaryEntry, Profile, mince+ types)
   Utilities/            Theme (design tokens), Targets (BMR, macros, DRI), Units, NutritionScores, Demo fixtures, Siri intent
-  ViewModels/AppModel   session, profile, catalogues, Gold status, selected day, sheet router
+  ViewModels/AppModel   session, profile, catalogues, mince+ status, selected day, sheet router
   Services/             one struct per area; Supabase, Open Food Facts, HealthKit, StoreKit, speech, Edge Functions
   Views/                Dashboard, Diary, Log (food, barcode, photo, voice, quick entries), Foods, Trends, Fasting, More, Paywall
 supabase/
   migrations/           schema + RLS + RPCs, storage buckets, reference data (nutrients, DRIs, exercises, biometrics)
   functions/            photo-log, voice-parse, recipe-import, coach, verify-purchase, appstore-notifications, delete-account
   seed/usda_import.py   builds the shared food database from USDA FoodData Central downloads
-Products.storekit       local StoreKit test products (Gold monthly / annual)
+Products.storekit       local StoreKit test products (mince+ monthly / annual)
 minceUITests/           end-to-end tests in demo mode
 ```
 
@@ -31,7 +31,7 @@ minceUITests/           end-to-end tests in demo mode
 2. `mince/Info.plist` holds `SUPABASE_URL` and `SUPABASE_ANON_KEY` (gitignored).
 3. Open `mince.xcodeproj`, add HealthKit and Sign in with Apple under Signing & Capabilities, run.
 
-No backend handy? Run a Debug build with launch argument `-demo` (add `-gold` for Gold features) to use fixture data.
+No backend handy? Run a Debug build with launch argument `-demo` (add `-plus` for mince+ features) to use fixture data.
 
 ## Checks
 

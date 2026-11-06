@@ -5,7 +5,7 @@ import SwiftUI
 // MARK: - Buttons
 
 struct MinceButtonStyle: ButtonStyle {
-    enum Kind { case primary, secondary, destructive, gold }
+    enum Kind { case primary, secondary, destructive, plus }
     var kind: Kind = .primary
     var isLoading = false
     @Environment(\.isEnabled) private var isEnabled
@@ -33,7 +33,7 @@ struct MinceButtonStyle: ButtonStyle {
         case .primary: Theme.Colors.onAccent
         case .secondary: Theme.Colors.text
         case .destructive: Theme.Colors.danger
-        case .gold: Theme.Colors.onGold
+        case .plus: Theme.Colors.onPlus
         }
     }
 
@@ -41,7 +41,7 @@ struct MinceButtonStyle: ButtonStyle {
         switch kind {
         case .primary: Theme.Colors.accent
         case .secondary, .destructive: Theme.Colors.surface
-        case .gold: Theme.Colors.gold
+        case .plus: Theme.Colors.plus
         }
     }
 }
@@ -53,18 +53,18 @@ extension ButtonStyle where Self == MinceButtonStyle {
     }
 }
 
-// MARK: - Gold badge
+// MARK: - mince+ badge
 
-struct GoldBadge: View {
+struct PlusBadge: View {
     var body: some View {
-        Label("Gold", systemImage: "lock.fill")
+        Label("mince+", systemImage: "lock.fill")
             .font(Theme.Fonts.caption.weight(.semibold))
             .labelStyle(.titleAndIcon)
             .padding(.horizontal, Theme.Space.xs)
             .padding(.vertical, 2)
-            .foregroundStyle(Theme.Colors.onGold)
-            .background(Theme.Colors.gold, in: Capsule())
-            .accessibilityLabel("Gold feature")
+            .foregroundStyle(Theme.Colors.onPlus)
+            .background(Theme.Colors.plus, in: Capsule())
+            .accessibilityLabel("mince+ feature")
     }
 }
 

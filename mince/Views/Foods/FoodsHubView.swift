@@ -41,7 +41,7 @@ struct FoodsHubView: View {
                     Menu {
                         Button { creatingFood = true } label: { Label("Custom food", systemImage: "square.and.pencil") }
                         Button { creatingRecipe = true } label: { Label("Recipe", systemImage: "list.bullet.rectangle") }
-                        Button { app.requireGold { importing = true } } label: { Label("Import recipe\(app.isGold ? "" : " (Gold)")", systemImage: "link") }
+                        Button { app.requirePlus { importing = true } } label: { Label("Import recipe\(app.hasPlus ? "" : " (mince+)")", systemImage: "link") }
                         Button { creatingMeal = true } label: { Label("Meal", systemImage: "square.stack") }
                     } label: { Image(systemName: "plus") }
                     .accessibilityLabel("Create")
@@ -74,7 +74,7 @@ struct FoodsHubView: View {
                         Task { do { try await FoodService().archive(food); await load() } catch { app.report(error) } }
                     } label: { Label("Delete", systemImage: "trash") }
                     Button {
-                        app.requireGold { Task { do { shareURL = try await FoodService().share(food) } catch { app.report(error) } } }
+                        app.requirePlus { Task { do { shareURL = try await FoodService().share(food) } catch { app.report(error) } } }
                     } label: { Label("Share", systemImage: "square.and.arrow.up") }
                     .tint(Theme.Colors.accent)
                 }

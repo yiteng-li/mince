@@ -1,11 +1,11 @@
-// Coach (Gold): 3-5 short suggestions from the user's own averages vs their targets. Sends numbers only, no names.
-import { caller, HttpError, json, requireGold, serve, takeQuota } from "../_shared/http.ts";
+// Coach (mince+): 3-5 short suggestions from the user's own averages vs their targets. Sends numbers only, no names.
+import { caller, HttpError, json, requirePlus, serve, takeQuota } from "../_shared/http.ts";
 import { structured } from "../_shared/claude.ts";
 
 export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const days = Math.min(Math.max(Number(body.days) || 7, 3), 30);
-  await requireGold(db);
+  await requirePlus(db);
   await takeQuota(user.id, "coach");
 
   const to = new Date();
