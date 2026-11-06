@@ -54,19 +54,28 @@ export async function takeQuota(userId: string, kind: keyof typeof DAILY_LIMITS)
   if (error) throw error;
 }
 
-/** Wraps a handler: POST only, JSON body, errors mapped to {error} responses. */
-export function serve(handler: (req: Request, body: Record<string, unknown>) => Promise<Response>) {
-  Deno.serve(async (req) => {
+type Handler = (req: Request, body: Record<string, unknown>) => Promise<Response>;
+
+/** POST only, JSON object body, errors mapped to {error} responses. Exported for tests. */
+export function handle(handler: Handler): (req: Request) => Promise<Response> {
+  return async (req) => {
     if (req.method !== "POST") return json({ error: "POST only" }, 405);
     try {
       const body = await req.json().catch(() => ({}));
-      return await handler(req, body && typeof body === "object" ? body as Record<string, unknown> : {});
+      return await handler(req, body && typeof body === "object" && !Array.isArray(body) ? body as Record<string, unknown> : {});
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.message }, e.status);
       console.error(e instanceof Error ? e.message : e); // never log request bodies: they hold user data
       return json({ error: "Something went wrong. Try again." }, 500);
     }
-  });
+  };
+}
+
+/** Starts the function. Under tests (MINCE_TEST=1) it only returns the handler so tests can call it directly. */
+export function serve(handler: Handler): (req: Request) => Promise<Response> {
+  const h = handle(handler);
+  if (Deno.env.get("MINCE_TEST") !== "1") Deno.serve(h);
+  return h;
 }
 
 export function str(v: unknown, max: number): string | undefined {

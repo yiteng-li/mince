@@ -18,7 +18,7 @@ export function unverifiedPayload<T>(jws: string): T {
   return JSON.parse(new TextDecoder().decode(decodeBase64Url(part))) as T;
 }
 
-async function apiToken(): Promise<string> {
+export async function apiToken(): Promise<string> {
   const pem = env("APPSTORE_PRIVATE_KEY").replace(/-----[^-]+-----|\s/g, "");
   const key = await crypto.subtle.importKey("pkcs8", decodeBase64(pem), { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
   const enc = (o: unknown) => encodeBase64Url(new TextEncoder().encode(JSON.stringify(o)));
@@ -58,21 +58,27 @@ export async function fetchTransaction(transactionId: string): Promise<AppleTran
 
 const GOLD_PRODUCTS = new Set(["mince.gold.monthly", "mince.gold.annual"]);
 
-/** Writes Apple's view of a subscription. Returns whether it currently grants Gold. */
-export async function storeSubscription(t: AppleTransaction, userId: string, grace = false): Promise<boolean> {
-  if (t.bundleId !== env("APPSTORE_BUNDLE_ID") || !GOLD_PRODUCTS.has(t.productId)) throw new HttpError(400, "Not a mince Gold purchase.");
+/** The subscriptions row for Apple's view of a transaction. Pure, for tests. */
+export function subscriptionRow(t: AppleTransaction, userId: string, bundleId: string, grace = false, now = Date.now()) {
+  if (t.bundleId !== bundleId || !GOLD_PRODUCTS.has(t.productId)) throw new HttpError(400, "Not a mince Gold purchase.");
   const expires = t.expiresDate ?? 0;
-  const status = t.revocationDate ? "revoked" : grace ? "grace" : expires > Date.now() ? "active" : "expired";
-  const { error } = await admin().from("subscriptions").upsert({
+  const status = t.revocationDate ? "revoked" : grace ? "grace" : expires > now ? "active" : "expired";
+  return {
     original_transaction_id: t.originalTransactionId,
     user_id: userId,
     product_id: t.productId,
     status,
     // Grace period: keep access for Apple's billing grace window even though expiresDate has passed.
-    expires_at: new Date(grace ? Math.max(expires, Date.now() + 16 * 86_400_000) : expires).toISOString(),
+    expires_at: new Date(grace ? Math.max(expires, now + 16 * 86_400_000) : expires).toISOString(),
     environment: t.environment === "Production" ? "Production" : "Sandbox",
-    updated_at: new Date().toISOString(),
-  });
+    updated_at: new Date(now).toISOString(),
+  };
+}
+
+/** Writes Apple's view of a subscription. Returns whether it currently grants Gold. */
+export async function storeSubscription(t: AppleTransaction, userId: string, grace = false): Promise<boolean> {
+  const row = subscriptionRow(t, userId, env("APPSTORE_BUNDLE_ID"), grace);
+  const { error } = await admin().from("subscriptions").upsert(row);
   if (error) throw error;
-  return status === "active" || status === "grace";
+  return row.status === "active" || row.status === "grace";
 }

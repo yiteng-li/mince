@@ -4,7 +4,7 @@ import { type Item, itemsSchema, structured } from "../_shared/claude.ts";
 import { matchItems } from "../_shared/match.ts";
 import { encodeBase64 } from "jsr:@std/encoding@1/base64";
 
-serve(async (req, body) => {
+export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const path = str(body.path, 200);
   if (!path || !path.startsWith(`${user.id}/`) || path.includes("..")) throw new HttpError(400, "Bad photo path.");

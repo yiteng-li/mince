@@ -2,7 +2,7 @@
 import { caller, HttpError, json, serve, str } from "../_shared/http.ts";
 import { type AppleTransaction, fetchTransaction, storeSubscription, unverifiedPayload } from "../_shared/appstore.ts";
 
-serve(async (req, body) => {
+export default serve(async (req, body) => {
   const { user } = await caller(req);
   const jws = str(body.jws, 20_000);
   if (!jws) throw new HttpError(400, "Missing transaction.");

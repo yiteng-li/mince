@@ -10,7 +10,7 @@ type Notification = {
   data?: { signedTransactionInfo?: string; bundleId?: string };
 };
 
-serve(async (_req, body) => {
+export default serve(async (_req, body) => {
   if (typeof body.signedPayload !== "string") return json({ error: "missing signedPayload" }, 400);
   const n = unverifiedPayload<Notification>(body.signedPayload);
   const svc = admin();

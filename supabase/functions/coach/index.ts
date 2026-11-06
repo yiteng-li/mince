@@ -2,7 +2,7 @@
 import { caller, HttpError, json, requireGold, serve, takeQuota } from "../_shared/http.ts";
 import { structured } from "../_shared/claude.ts";
 
-serve(async (req, body) => {
+export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const days = Math.min(Math.max(Number(body.days) || 7, 3), 30);
   await requireGold(db);

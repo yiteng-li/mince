@@ -3,7 +3,7 @@ import { caller, HttpError, json, requireGold, serve, str, takeQuota } from "../
 import { type Item, itemsSchema, structured } from "../_shared/claude.ts";
 import { matchItems } from "../_shared/match.ts";
 
-serve(async (req, body) => {
+export default serve(async (req, body) => {
   const { user, db } = await caller(req);
   const text = str(body.text, 2000);
   if (!text) throw new HttpError(400, "Say or type what you ate.");

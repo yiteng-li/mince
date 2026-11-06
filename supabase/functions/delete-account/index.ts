@@ -1,7 +1,7 @@
 // Deletes the caller's account: storage folders, then the auth user (every table cascades from auth.users).
 import { admin, caller, HttpError, json, serve } from "../_shared/http.ts";
 
-serve(async (req, body) => {
+export default serve(async (req, body) => {
   const { user } = await caller(req);
   if (body.confirm !== "delete") throw new HttpError(400, "Confirmation missing.");
   const svc = admin();
