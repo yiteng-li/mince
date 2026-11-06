@@ -162,7 +162,8 @@ final class AppModel {
     func foodEntry(_ food: Food, serving: FoodServing, qty: Double, groupId: UUID?, at time: Date?) -> DiaryEntry? {
         guard let uid = userId else { return nil }
         return DiaryEntry(userId: uid, day: selectedDay, kind: .food, groupId: groupId ?? defaultGroupId(), loggedAt: isGold ? time : nil,
-                          foodId: food.id, servingId: serving.storedId, servingQty: qty, amountG: serving.grams * qty, food: food)
+                          foodId: food.id, servingId: serving.storedId, servingQty: qty, amountG: serving.grams * qty, food: food,
+                          serving: serving.isBuiltIn ? nil : .init(name: serving.name))
     }
 
     func targets(for day: Day) -> DayTargets {

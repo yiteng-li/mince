@@ -179,6 +179,7 @@ struct NumberField: View {
                 TextField("0", text: $text, selection: $selection)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
+                    .accessibilityLabel(title.isEmpty ? (unit ?? "Amount") : title)
                     .focused($focused)
                     // Select the number on focus so typing replaces it (no "01" when you meant "0").
                     .onChange(of: focused) { _, on in if on { selection = TextSelection(range: text.startIndex..<text.endIndex) } }

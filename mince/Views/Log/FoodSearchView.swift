@@ -187,6 +187,7 @@ struct FoodResultRow: View {
                 Text("per \(s.name == "g" ? "100 g" : s.name)").font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textMuted)
             }
         }
+        .contentShape(Rectangle())   // the whole row is tappable, including the gap in the middle
         .accessibilityElement(children: .combine)
     }
 }

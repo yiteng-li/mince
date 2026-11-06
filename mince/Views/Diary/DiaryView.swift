@@ -135,6 +135,8 @@ struct DiaryView: View {
                 }
             }
             .environment(\.editMode, $editMode)
+            // The Copy / Delete bar sits where the tab bar is; hide tabs while selecting so taps reach it.
+            .toolbar(editMode.isEditing ? .hidden : .visible, for: .tabBar)
             .listStyle(.insetGrouped)
             .screenBackground()
             .navigationTitle("Diary")
@@ -276,7 +278,10 @@ struct DiaryView: View {
         DiaryEntryRow(entry: entry, showTime: app.isGold)
             .tag(entry.id)
             .contentShape(Rectangle())
-            .onTapGesture { if !editMode.isEditing { app.open(.editEntry(entry)) } }
+            .onTapGesture {
+                // This gesture would otherwise swallow the List's own selection taps in Select mode.
+                if editMode.isEditing { selection.formSymmetricDifference([entry.id]) } else { app.open(.editEntry(entry)) }
+            }
             .swipeActions(edge: .trailing) {
                 Button(role: .destructive) { Task { await model.delete([entry.id], app: app) } } label: { Label("Delete", systemImage: "trash") }
             }
@@ -329,10 +334,12 @@ struct DiaryEntryRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    private var isWater: Bool { entry.kind == .quickAdd && entry.nutrients?.keys.sorted() == ["water"] }
+
     private var title: String {
         switch entry.kind {
         case .food: entry.food?.displayName ?? "Food"
-        case .quickAdd: entry.title ?? "Quick add"
+        case .quickAdd: isWater ? "Water" : entry.title ?? "Quick add"
         case .exercise: entry.exercise?.name ?? entry.title ?? "Exercise"
         case .biometric: app.biometricType(id: entry.biometricTypeId)?.name ?? "Biometric"
         case .note: entry.note ?? ""
@@ -348,6 +355,7 @@ struct DiaryEntryRow: View {
             }
             return g
         case .exercise: return entry.minutes.map { "\(Int($0)) min" }
+        case .quickAdd where isWater: return nil
         case .quickAdd:
             let n = entry.nutrients ?? [:]
             return "P \(Int(n[.protein]))g · C \(Int(n[.carbs]))g · F \(Int(n[.fat]))g"
@@ -357,6 +365,7 @@ struct DiaryEntryRow: View {
 
     private var trailing: String? {
         switch entry.kind {
+        case .quickAdd where isWater: "\(Int(entry.nutrients?["water"] ?? 0)) mL"
         case .food, .quickAdd: Units.energy(entry.consumed[.energy], app.energyUnit)
         case .exercise: "−" + Units.energy(entry.energyKcal ?? 0, app.energyUnit)
         case .biometric: BiometricFormat.value(entry, type: app.biometricType(id: entry.biometricTypeId), units: app.unitSystem)
@@ -392,6 +401,7 @@ struct WaterRow: View {
         Section {
             HStack {
                 NutrientBar(name: "Water", amount: consumedMl, unit: "mL", target: targetMl, tint: Theme.Colors.carbs)
+                    .accessibilityIdentifier("waterTotal")
                 Button { Task { await WaterLogView.add(ml: 250, app: app) } } label: {
                     Image(systemName: "plus.circle.fill").font(.title2)
                 }
