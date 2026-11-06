@@ -135,3 +135,25 @@ struct Meal: Identifiable, Codable, Hashable {
 
     var nutrients: Nutrients { (items ?? []).reduce(into: Nutrients()) { $0 += $1.nutrients } }
 }
+
+/// Row written to recipe_ingredients (recipe_id set) or meal_items (meal_id set).
+struct FoodLineRow: Encodable {
+    let id: UUID, food_id: UUID, serving_id: UUID?, serving_qty: Double?, amount_g: Double, position: Int
+    let recipe_id: UUID?, meal_id: UUID?
+
+    func encode(to encoder: Encoder) throws {
+        enum K: String, CodingKey { case id, food_id, serving_id, serving_qty, amount_g, position, recipe_id, meal_id }
+        var c = encoder.container(keyedBy: K.self)
+        try c.encode(id, forKey: .id); try c.encode(food_id, forKey: .food_id)
+        try c.encode(serving_id, forKey: .serving_id); try c.encode(serving_qty, forKey: .serving_qty)
+        try c.encode(amount_g, forKey: .amount_g); try c.encode(position, forKey: .position)
+        if let recipe_id { try c.encode(recipe_id, forKey: .recipe_id) }
+        if let meal_id { try c.encode(meal_id, forKey: .meal_id) }
+    }
+}
+
+/// One row of the get_shared_food RPC.
+struct SharedFoodRow: Decodable {
+    let food: Food
+    let servings: [FoodServing]
+}

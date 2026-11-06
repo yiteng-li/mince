@@ -9,7 +9,7 @@ struct FoodService {
     struct SearchParams: Encodable { let q: String; let lim: Int; let off: Int }
 
     func search(_ query: String, limit: Int = 40, offset: Int = 0) async throws -> [Food] {
-        if Demo.active { return Demo.foods.filter { $0.name.localizedCaseInsensitiveContains(query) } }
+        if Demo.active { return Demo.foods.filter { $0.archivedAt == nil && $0.name.localizedCaseInsensitiveContains(query) } }
         return try await db.rpc("search_foods", params: SearchParams(q: query, lim: limit, off: offset))
             .select(Self.withServings).execute().value
     }
@@ -25,6 +25,7 @@ struct FoodService {
     }
 
     func findByBarcode(_ barcode: String) async throws -> Food? {
+        if Demo.active { return Demo.foods.first { $0.barcode == barcode && $0.archivedAt == nil } }
         let rows: [Food] = try await db.from("foods").select(Self.withServings)
             .eq("barcode", value: barcode).is("archived_at", value: nil).limit(1).execute().value
         return rows.first
@@ -32,7 +33,7 @@ struct FoodService {
 
     /// The user's own foods and recipes.
     func mine(kind: Food.Kind) async throws -> [Food] {
-        if Demo.active { return Demo.foods.filter { $0.isMine && $0.kind == kind } }
+        if Demo.active { return Demo.foods.filter { $0.isMine && $0.kind == kind && $0.archivedAt == nil }.sorted { $0.name < $1.name } }
         return try await db.from("foods").select(Self.withServings)
             .eq("user_id", value: SupabaseService.userId.uuidString)
             .eq("kind", value: kind.rawValue).is("archived_at", value: nil)
@@ -43,6 +44,14 @@ struct FoodService {
     /// diary entries that used them keep their serving name; the first one becomes the default.
     @discardableResult
     func save(_ food: Food, servings: [FoodServing]) async throws -> Food {
+        if Demo.active {
+            var f = food
+            f.servings = servings.filter { !$0.isBuiltIn }.enumerated().map { i, s in
+                FoodServing(id: s.id, foodId: food.id, name: s.name, grams: s.grams, isDefault: i == 0, position: i)
+            }
+            Demo.upsert(f, into: &Demo.foods)
+            return f
+        }
         try await db.from("foods").upsert(food).execute()
         let rows = servings.filter { !$0.isBuiltIn }.enumerated().map { i, s in
             FoodServing(id: s.id, foodId: food.id, name: s.name, grams: s.grams, isDefault: i == 0, position: i)
@@ -58,40 +67,37 @@ struct FoodService {
 
     /// Soft delete: diary rows keep pointing at it.
     func archive(_ food: Food) async throws {
+        if Demo.active { if let i = Demo.foods.firstIndex(where: { $0.id == food.id }) { Demo.foods[i].archivedAt = Date() }; return }
         try await db.from("foods").update(["archived_at": Date().ISO8601Format()]).eq("id", value: food.id.uuidString).execute()
     }
 
     // MARK: recipes
 
     func ingredients(of recipeId: UUID) async throws -> [FoodLine] {
-        try await db.from("recipe_ingredients").select("*, food:foods(\(Self.withServings))")
+        if Demo.active { return Demo.recipeLines[recipeId] ?? [] }
+        return try await db.from("recipe_ingredients").select("*, food:foods!food_id(\(Self.withServings))")
             .eq("recipe_id", value: recipeId.uuidString).order("position").execute().value
-    }
-
-    private struct LineRow: Encodable {
-        let id: UUID, food_id: UUID, serving_id: UUID?, serving_qty: Double?, amount_g: Double, position: Int
-        let recipe_id: UUID?, meal_id: UUID?
-        func encode(to encoder: Encoder) throws {
-            enum K: String, CodingKey { case id, food_id, serving_id, serving_qty, amount_g, position, recipe_id, meal_id }
-            var c = encoder.container(keyedBy: K.self)
-            try c.encode(id, forKey: .id); try c.encode(food_id, forKey: .food_id)
-            try c.encode(serving_id, forKey: .serving_id); try c.encode(serving_qty, forKey: .serving_qty)
-            try c.encode(amount_g, forKey: .amount_g); try c.encode(position, forKey: .position)
-            if let recipe_id { try c.encode(recipe_id, forKey: .recipe_id) }
-            if let meal_id { try c.encode(meal_id, forKey: .meal_id) }
-        }
     }
 
     /// Saves a recipe (a food of kind .recipe) with its ingredients, then recomputes its nutrients.
     @discardableResult
     func saveRecipe(_ recipe: Food, ingredients: [FoodLine], servings: [FoodServing]) async throws -> Food {
+        if Demo.active {   // same math as the recompute_recipe RPC
+            var r = recipe
+            (r.kind, r.source) = (.recipe, .recipe)
+            let lines = ingredients.map { l in var l = l; l.food = l.food ?? Demo.foods.first { $0.id == l.foodId }; return l }
+            let total = r.recipeYieldG ?? lines.reduce(0) { $0 + $1.amountG }
+            r.nutrients = total > 0 ? lines.reduce(into: Nutrients()) { $0 += $1.nutrients }.scaled(by: 100 / total) : [:]
+            Demo.recipeLines[r.id] = lines
+            return try await save(r, servings: servings)
+        }
         var r = recipe
         r.kind = .recipe
         r.source = r.source == .shared ? .shared : .recipe
         try await db.from("foods").upsert(r).execute()
         try await db.from("recipe_ingredients").delete().eq("recipe_id", value: r.id.uuidString).execute()
         let rows = ingredients.enumerated().map { i, l in
-            LineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
+            FoodLineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
                     position: i, recipe_id: r.id, meal_id: nil)
         }
         if !rows.isEmpty { try await db.from("recipe_ingredients").insert(rows).execute() }
@@ -102,24 +108,28 @@ struct FoodService {
     // MARK: meals
 
     func meals() async throws -> [Meal] {
-        if Demo.active {
-            let items = [0, 1, 2].map { i in FoodLine(parentId: Demo.userId, foodId: Demo.foods[i].id, servingId: nil, servingQty: 1, amountG: Demo.foods[i].defaultServing.grams, food: Demo.foods[i]) }
-            return [Meal(userId: Demo.userId, name: "Usual breakfast", items: items)]
-        }
+        if Demo.active { return Demo.meals.sorted { $0.name < $1.name } }
         return try await db.from("meals").select("*, meal_items(*, food:foods(\(Self.withServings)))").order("name").execute().value
     }
 
     func saveMeal(_ meal: Meal, items: [FoodLine]) async throws {
+        if Demo.active {
+            var m = meal
+            m.items = items.map { l in var l = l; l.food = l.food ?? Demo.foods.first { $0.id == l.foodId }; return l }
+            Demo.upsert(m, into: &Demo.meals)
+            return
+        }
         try await db.from("meals").upsert(meal).execute()
         try await db.from("meal_items").delete().eq("meal_id", value: meal.id.uuidString).execute()
         let rows = items.enumerated().map { i, l in
-            LineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
+            FoodLineRow(id: UUID(), food_id: l.foodId, serving_id: l.servingId, serving_qty: l.servingQty, amount_g: l.amountG,
                     position: i, recipe_id: nil, meal_id: meal.id)
         }
         if !rows.isEmpty { try await db.from("meal_items").insert(rows).execute() }
     }
 
     func deleteMeal(_ meal: Meal) async throws {
+        if Demo.active { Demo.meals.removeAll { $0.id == meal.id }; return }
         try await db.from("meals").delete().eq("id", value: meal.id.uuidString).execute()
     }
 
@@ -127,6 +137,7 @@ struct FoodService {
 
     /// Turns sharing on and returns the link.
     func share(_ food: Food) async throws -> URL {
+        if Demo.active { return URL(string: "mince://shared/\(food.shareToken ?? UUID())")! }
         var f = food
         let token = f.shareToken ?? UUID()
         if f.shareToken == nil {
@@ -137,11 +148,9 @@ struct FoodService {
         return URL(string: "mince://shared/\(token.uuidString)")!
     }
 
-    private struct SharedRow: Decodable { let food: Food; let servings: [FoodServing] }
-
     /// Copies someone's shared food into the user's own foods.
     func importShared(token: UUID) async throws -> Food {
-        let rows: [SharedRow] = try await db.rpc("get_shared_food", params: ["p_token": token.uuidString]).execute().value
+        let rows: [SharedFoodRow] = try await db.rpc("get_shared_food", params: ["p_token": token.uuidString]).execute().value
         guard let row = rows.first else { throw AppError.message("That share link no longer works.") }
         var copy = row.food
         copy.id = UUID()
@@ -150,7 +159,9 @@ struct FoodService {
         copy.source = .shared
         copy.shareToken = nil
         copy.servings = nil
-        return try await save(copy, servings: row.servings)
+        // New ids: the sharer's serving rows aren't ours to update.
+        let servings = row.servings.map { s in var s = s; s.id = UUID(); s.foodId = copy.id; return s }
+        return try await save(copy, servings: servings)
     }
 
     // MARK: Oracle (Gold)

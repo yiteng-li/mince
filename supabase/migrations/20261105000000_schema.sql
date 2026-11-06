@@ -584,7 +584,7 @@ create or replace function public.get_shared_food(p_token uuid)
 returns table (food jsonb, servings jsonb)
 language sql stable security definer set search_path = public as $$
   select to_jsonb(f) - 'user_id' - 'share_token',
-         coalesce((select jsonb_agg(to_jsonb(s) - 'food_id') from public.food_servings s where s.food_id = f.id), '[]')
+         coalesce((select jsonb_agg(to_jsonb(s)) from public.food_servings s where s.food_id = f.id), '[]')
   from public.foods f
   where f.share_token = p_token and f.archived_at is null
 $$;
