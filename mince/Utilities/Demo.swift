@@ -48,11 +48,11 @@ enum Demo {
         return p
     }()
 
-    static let groups = ["Breakfast", "Lunch", "Dinner", "Snacks"].enumerated().map { i, n in
+    static var groups = ["Breakfast", "Lunch", "Dinner", "Snacks"].enumerated().map { i, n in
         DiaryGroup(id: UUID(uuidString: "22222222-2222-2222-2222-00000000000\(i)")!, userId: userId, name: n, position: i)
     }
 
-    static let biometricTypes: [BiometricType] = [
+    static var biometricTypes: [BiometricType] = [
         BiometricType(key: "weight", name: "Weight", unit: "kg", category: "body"),
         BiometricType(key: "waist", name: "Waist", unit: "cm", category: "body"),
         BiometricType(key: "blood_pressure", name: "Blood pressure", unit: "mmHg", category: "vitals", valueKind: .pair),
@@ -60,7 +60,7 @@ enum Demo {
         BiometricType(key: "mood", name: "Mood", unit: "1-10", category: "mood", valueKind: .scale110),
     ]
 
-    static let foods: [Food] = {
+    static var foods: [Food] = {
         func f(_ name: String, _ brand: String?, _ n: Nutrients, serving: (String, Double)?, mine: Bool = false, kind: Food.Kind = .food) -> Food {
             var food = Food(userId: mine ? userId : nil, kind: kind, source: mine ? .custom : .usda, name: name, brand: brand, nutrients: n)
             food.servings = serving.map { [FoodServing(foodId: food.id, name: $0.0, grams: $0.1, isDefault: true)] } ?? []
@@ -110,5 +110,26 @@ enum Demo {
         diary.filter { $0.day >= from && $0.day <= to }.reduce(into: [:]) { $0[$1.day, default: [:]] += $1.consumed }
     }
 
-    static let completed: Set<Day> = Set((1...5).map { Day.today.adding(days: -$0) })
+    static var completed: Set<Day> = Set((1...5).map { Day.today.adding(days: -$0) })
+
+    // In-memory stores so demo writes show up (reset on relaunch).
+    static var meals: [Meal] = [Meal(userId: userId, name: "Usual breakfast", items: [0, 1, 2].map { i in
+        FoodLine(parentId: userId, foodId: foods[i].id, servingId: nil, servingQty: 1, amountG: foods[i].defaultServing.grams, food: foods[i])
+    })]
+    static var recipeLines: [UUID: [FoodLine]] = [:]
+    static var repeatRules: [RepeatRule] = [RepeatRule(userId: userId, foodId: foods[0].id, amountG: 40, groupId: groups[0].id,
+                                                       weekdays: [1, 2, 3, 4, 5], startsOn: .today, food: .init(name: foods[0].name))]
+    static var fasts: [Fast] = [Fast(userId: userId, startedAt: Date().addingTimeInterval(-11 * 3600), targetMinutes: 960),
+                                Fast(userId: userId, startedAt: Date().addingTimeInterval(-36 * 3600), endedAt: Date().addingTimeInterval(-19 * 3600), targetMinutes: 960)]
+    static var fastSchedules: [FastSchedule] = [FastSchedule(userId: userId, weekdays: [1, 2, 3, 4, 5], startTime: "20:00:00", targetMinutes: 960)]
+    static var charts: [CustomChart] = [CustomChart(userId: userId, title: "Magnesium vs weight",
+                                                    series: [.init(type: .nutrient, key: "magnesium"), .init(type: .biometric, key: "weight")], rangeDays: 14, pinned: true)]
+    static var overrides: [NutrientTargetOverride] = []
+    static var templates: [MacroTemplate] = [MacroTemplate(userId: userId, name: "Training day", energyKcal: 2300, proteinG: 140, carbsG: 260, fatG: 70)]
+    static var schedule: [MacroScheduleDay] = []
+
+    /// Replaces an element with the same id, or appends it.
+    static func upsert<T: Identifiable>(_ item: T, into list: inout [T]) {
+        if let i = list.firstIndex(where: { $0.id == item.id }) { list[i] = item } else { list.append(item) }
+    }
 }

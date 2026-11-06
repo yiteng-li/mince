@@ -15,63 +15,75 @@ struct GoldService {
     // MARK: Repeat Items
 
     func repeatRules() async throws -> [RepeatRule] {
-        if Demo.active { return [RepeatRule(userId: Demo.userId, foodId: Demo.foods[0].id, amountG: 40, groupId: Demo.groups[0].id, weekdays: [1, 2, 3, 4, 5], startsOn: .today, food: .init(name: Demo.foods[0].name))] }
+        if Demo.active { return Demo.repeatRules }
         return try await db.from("repeat_rules").select("*, foods(name), meals(name)").order("created_at").execute().value
     }
 
     func save(_ rule: RepeatRule) async throws {
+        if Demo.active {
+            var r = rule
+            r.food = Demo.foods.first { $0.id == rule.foodId }.map { .init(name: $0.name) }
+            Demo.upsert(r, into: &Demo.repeatRules)
+            return
+        }
         do { try await db.from("repeat_rules").upsert(rule).execute() } catch { throw AppError.wrap(error) }
     }
 
     func delete(_ rule: RepeatRule) async throws {
+        if Demo.active { Demo.repeatRules.removeAll { $0.id == rule.id }; return }
         try await db.from("repeat_rules").delete().eq("id", value: rule.id.uuidString).execute()
     }
 
     // MARK: Fasting
 
     func fasts(limit: Int = 60) async throws -> [Fast] {
-        if Demo.active {
-            return [Fast(userId: Demo.userId, startedAt: Date().addingTimeInterval(-11 * 3600), targetMinutes: 960),
-                    Fast(userId: Demo.userId, startedAt: Date().addingTimeInterval(-36 * 3600), endedAt: Date().addingTimeInterval(-19 * 3600), targetMinutes: 960)]
-        }
+        if Demo.active { return Demo.fasts.sorted { $0.startedAt > $1.startedAt } }
         return try await db.from("fasts").select().order("started_at", ascending: false).limit(limit).execute().value
     }
 
     func save(_ fast: Fast) async throws {
+        if Demo.active {   // mirrors the one-open-fast unique index
+            if fast.isOpen, Demo.fasts.contains(where: { $0.isOpen && $0.id != fast.id }) { throw AppError.message("A fast is already running.") }
+            Demo.upsert(fast, into: &Demo.fasts)
+            return
+        }
         do { try await db.from("fasts").upsert(fast).execute() } catch { throw AppError.wrap(error) }
     }
 
     func delete(_ fast: Fast) async throws {
+        if Demo.active { Demo.fasts.removeAll { $0.id == fast.id }; return }
         try await db.from("fasts").delete().eq("id", value: fast.id.uuidString).execute()
     }
 
     func fastSchedules() async throws -> [FastSchedule] {
-        if Demo.active { return [FastSchedule(userId: Demo.userId, weekdays: [1, 2, 3, 4, 5], startTime: "20:00:00", targetMinutes: 960)] }
+        if Demo.active { return Demo.fastSchedules }
         return try await db.from("fast_schedules").select().execute().value
     }
 
     func save(_ schedule: FastSchedule) async throws {
+        if Demo.active { Demo.upsert(schedule, into: &Demo.fastSchedules); return }
         do { try await db.from("fast_schedules").upsert(schedule).execute() } catch { throw AppError.wrap(error) }
     }
 
     func delete(_ schedule: FastSchedule) async throws {
+        if Demo.active { Demo.fastSchedules.removeAll { $0.id == schedule.id }; return }
         try await db.from("fast_schedules").delete().eq("id", value: schedule.id.uuidString).execute()
     }
 
     // MARK: Custom charts
 
     func charts() async throws -> [CustomChart] {
-        if Demo.active {
-            return [CustomChart(userId: Demo.userId, title: "Magnesium vs weight", series: [.init(type: .nutrient, key: "magnesium"), .init(type: .biometric, key: "weight")], rangeDays: 14, pinned: true)]
-        }
+        if Demo.active { return Demo.charts }
         return try await db.from("custom_charts").select().order("position").execute().value
     }
 
     func save(_ chart: CustomChart) async throws {
+        if Demo.active { Demo.upsert(chart, into: &Demo.charts); return }
         do { try await db.from("custom_charts").upsert(chart).execute() } catch { throw AppError.wrap(error) }
     }
 
     func delete(_ chart: CustomChart) async throws {
+        if Demo.active { Demo.charts.removeAll { $0.id == chart.id }; return }
         try await db.from("custom_charts").delete().eq("id", value: chart.id.uuidString).execute()
     }
 

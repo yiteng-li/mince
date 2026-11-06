@@ -58,6 +58,7 @@ struct DiaryService {
 
     /// Bulk delete everything logged between two days (inclusive).
     func deleteRange(from: Day, to: Day) async throws {
+        if Demo.active { Demo.diary.removeAll { $0.day >= from && $0.day <= to }; return }
         try await db.from("diary_entries").delete()
             .gte("day", value: from.rawValue).lte("day", value: to.rawValue).execute()
     }
@@ -102,15 +103,21 @@ struct DiaryService {
     // MARK: groups
 
     func groups() async throws -> [DiaryGroup] {
-        if Demo.active { return Demo.groups }
+        if Demo.active { return Demo.groups.sorted { $0.position < $1.position } }
         return try await db.from("diary_groups").select().order("position").execute().value
     }
 
     func upsert(groups: [DiaryGroup]) async throws {
+        if Demo.active { groups.forEach { Demo.upsert($0, into: &Demo.groups) }; Demo.groups.sort { $0.position < $1.position }; return }
         try await db.from("diary_groups").upsert(groups).execute()
     }
 
     func delete(group: DiaryGroup) async throws {
+        if Demo.active {
+            Demo.groups.removeAll { $0.id == group.id }
+            for i in Demo.diary.indices where Demo.diary[i].groupId == group.id { Demo.diary[i].groupId = nil }
+            return
+        }
         try await db.from("diary_groups").delete().eq("id", value: group.id.uuidString).execute()
     }
 
@@ -124,6 +131,7 @@ struct DiaryService {
     }
 
     func setCompleted(_ completed: Bool, day: Day) async throws {
+        if Demo.active { if completed { Demo.completed.insert(day) } else { Demo.completed.remove(day) }; return }
         try await db.from("days").upsert(DayStatus(userId: SupabaseService.userId, day: day, completed: completed)).execute()
     }
 

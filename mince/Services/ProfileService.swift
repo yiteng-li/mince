@@ -24,10 +24,12 @@ struct ProfileService {
     }
 
     func biometricTypes() async throws -> [BiometricType] {
-        try await db.from("biometric_types").select().order("category").order("name").execute().value
+        if Demo.active { return Demo.biometricTypes }
+        return try await db.from("biometric_types").select().order("category").order("name").execute().value
     }
 
     func saveBiometricType(_ type: BiometricType) async throws {
+        if Demo.active { Demo.upsert(type, into: &Demo.biometricTypes); return }
         do { try await db.from("biometric_types").upsert(type).execute() } catch { throw AppError.wrap(error) }
     }
 
@@ -50,38 +52,48 @@ struct ProfileService {
     // MARK: nutrient target overrides
 
     func overrides() async throws -> [NutrientTargetOverride] {
-        try await db.from("nutrient_targets").select().execute().value
+        if Demo.active { return Demo.overrides }
+        return try await db.from("nutrient_targets").select().execute().value
     }
 
     func save(override o: NutrientTargetOverride) async throws {
+        if Demo.active { Demo.overrides.removeAll { $0.nutrientKey == o.nutrientKey }; Demo.overrides.append(o); return }
         try await db.from("nutrient_targets").upsert(o).execute()
     }
 
     func resetOverride(key: String) async throws {
+        if Demo.active { Demo.overrides.removeAll { $0.nutrientKey == key }; return }
         try await db.from("nutrient_targets").delete().eq("nutrient_key", value: key).execute()
     }
 
     // MARK: Macro Scheduler (Gold)
 
     func macroTemplates() async throws -> [MacroTemplate] {
-        if Demo.active { return [MacroTemplate(userId: Demo.userId, name: "Training day", energyKcal: 2300, proteinG: 140, carbsG: 260, fatG: 70)] }
+        if Demo.active { return Demo.templates.sorted { $0.name < $1.name } }
         return try await db.from("macro_templates").select().order("name").execute().value
     }
 
     func save(template: MacroTemplate) async throws {
+        if Demo.active { Demo.upsert(template, into: &Demo.templates); return }
         do { try await db.from("macro_templates").upsert(template).execute() } catch { throw AppError.wrap(error) }
     }
 
     func delete(template: MacroTemplate) async throws {
+        if Demo.active { Demo.templates.removeAll { $0.id == template.id }; Demo.schedule.removeAll { $0.templateId == template.id }; return }
         try await db.from("macro_templates").delete().eq("id", value: template.id.uuidString).execute()
     }
 
     func macroSchedule() async throws -> [MacroScheduleDay] {
-        if Demo.active { return [] }
+        if Demo.active { return Demo.schedule }
         return try await db.from("macro_schedule").select().execute().value
     }
 
     func setSchedule(weekday: Int, templateId: UUID?) async throws {
+        if Demo.active {
+            Demo.schedule.removeAll { $0.weekday == weekday }
+            if let templateId { Demo.schedule.append(MacroScheduleDay(userId: Demo.userId, weekday: weekday, templateId: templateId)) }
+            return
+        }
         let uid = try SupabaseService.userId
         if let templateId {
             do { try await db.from("macro_schedule").upsert(MacroScheduleDay(userId: uid, weekday: weekday, templateId: templateId)).execute() }
